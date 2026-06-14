@@ -9,6 +9,12 @@ struct RootView: View {
             WaterView()
             ProtocolView()
             ReadinessView()
+            SleepView()
+            TrendsView()
+            LiveSensorsView()
+            SessionTimerView()
+            FastingView()
+            BreathworkView()
         }
         .tabViewStyle(.verticalPage)
         .background(Tokens.C.bg)

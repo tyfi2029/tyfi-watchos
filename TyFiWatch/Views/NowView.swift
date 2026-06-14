@@ -94,6 +94,9 @@ struct NowView: View {
             if let t = s.last_thermal_session, let f = t.temp_f {
                 StatTile(label: t.mode ?? "Thermal", value: units.temp(f), color: Tokens.C.warn)
             }
+            if let st = s.steps {
+                StatTile(label: "Steps", value: "\(st)", color: Tokens.C.accent)
+            }
         }
     }
 
