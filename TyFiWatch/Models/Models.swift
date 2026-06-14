@@ -220,6 +220,9 @@ struct FastingState: Decodable, Sendable {
         let remaining_hrs: Double?
         let progress_pct: Double?
         let reached_target: Bool?
+        // E2 additions
+        let stage: String?
+        let `protocol`: String?
     }
     struct EatingWindow: Decodable, Sendable {
         let open: Bool?
