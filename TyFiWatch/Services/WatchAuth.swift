@@ -1,14 +1,55 @@
 import Foundation
+import Security
 
-/// Holds the watch bearer token. Issued once by POST /api/watch/auth/token and
-/// persisted in the keychain in a later pass; for the scaffold it reads from
-/// UserDefaults so the app builds and runs without a live pairing.
-/// Stateless wrapper over the thread-safe `UserDefaults`, hence `Sendable`.
-final class WatchAuth: Sendable {
+/// Persists the watch bearer token in the device Keychain.
+/// Thread-safe via Keychain's own internal locking.
+/// Marked @unchecked Sendable because all mutable state lives in Keychain, not in Swift memory.
+final class WatchAuth: @unchecked Sendable {
     static let shared = WatchAuth()
-    private let key = "watch.bearerToken"
+    private let service = "fyi.tyfi.watch"
+    private let account = "bearerToken"
 
-    var token: String? { UserDefaults.standard.string(forKey: key) }
-    var isPaired: Bool { token?.isEmpty == false }
-    func set(_ token: String) { UserDefaults.standard.set(token, forKey: key) }
+    var token: String? {
+        let query: [CFString: Any] = [
+            kSecClass:       kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: account,
+            kSecReturnData:  true,
+            kSecMatchLimit:  kSecMatchLimitOne
+        ]
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        guard status == errSecSuccess,
+              let data = result as? Data,
+              let str  = String(data: data, encoding: .utf8),
+              !str.isEmpty else { return nil }
+        return str
+    }
+
+    var isPaired: Bool { token != nil }
+
+    func set(_ newToken: String) {
+        let data = Data(newToken.utf8)
+        let query: [CFString: Any] = [
+            kSecClass:       kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: account
+        ]
+        let attrs: [CFString: Any] = [kSecValueData: data]
+        let updateStatus = SecItemUpdate(query as CFDictionary, attrs as CFDictionary)
+        if updateStatus == errSecItemNotFound {
+            var addQuery = query
+            addQuery[kSecValueData] = data
+            SecItemAdd(addQuery as CFDictionary, nil)
+        }
+    }
+
+    func clear() {
+        let query: [CFString: Any] = [
+            kSecClass:       kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: account
+        ]
+        SecItemDelete(query as CFDictionary)
+    }
 }
