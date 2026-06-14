@@ -24,6 +24,8 @@ struct RootView: View {
             ReadinessView()
             SleepView()
             TrendsView()
+            NutritionView()
+            Zone2View()
             LiveSensorsView()
             SessionTimerView()
             FastingView()
