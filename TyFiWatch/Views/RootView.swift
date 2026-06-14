@@ -30,6 +30,12 @@ struct RootView: View {
             SessionTimerView()
             FastingView()
             BreathworkView()
+            WindDownView()
+            EnvironmentView()
+            CheckInView()
+            FlightView()
+            HomeView()
+            CaptureView()
         }
         .tabViewStyle(.verticalPage)
         .background(Tokens.C.bg)
