@@ -39,10 +39,27 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         GENERATE_INFOPLIST_FILE: NO
+  TyFiWatchComplications:
+    type: app-extension
+    platform: watchOS
+    deploymentTarget: "11.5"
+    sources:
+      - path: TyFiWatchComplications
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fyi.tyfi.watch.complications
+        INFOPLIST_EXTENSION_POINT_IDENTIFIER: com.apple.widgetkit-extension
+        SWIFT_VERSION: "6.0"
+        DEVELOPMENT_TEAM: "E5HE9TGHFQ"
+        CODE_SIGN_STYLE: Automatic
+    dependencies:
+      - target: TyFiWatch
+
 schemes:
   TyFiWatch:
     build:
       targets:
         TyFiWatch: all
+        TyFiWatchComplications: all
     run:
       config: Debug
