@@ -23,15 +23,22 @@
 [done] D1: NutritionView.swift — macro progress bars (calories/protein/carbs/fat vs targets) + CGM color-coded.
 [done] D2: GET /api/watch/zone2 — health_zone2_sessions weekly/today totals + recent sessions. HTTP 200. weekly=238 min / 150 min target (159%).
 [done] D2: Zone2View.swift — circular ring (weekly vs 150min target) + recent sessions list.
-[pending] D3-D9: Wind-down, Check-in, Flight, Home, Capture, Voice, Environment views not built.
+[done] D3: WindDownView.swift — 8Sleep bedTempF/targetTempF, wind-down checklist. wmp: /api/watch/winddown GET+POST. HTTP 200, bedTempF=77, targetTempF=80.6.
+[done] D4: EnvironmentView.swift — AQI/UV/pollen/noise/weather LazyVGrid.
+[done] D5: CheckInView.swift — nearby venues, check-in POST (venue_id+checked_in_at), star rating.
+[done] D6: FlightView.swift — flight progress ring. wmp: /api/watch/flight stub (health_flights table absent). HTTP 200 active_flight=null.
+[done] D7: HomeView.swift — smart_home_routines grid + one-tap watch trigger. wmp: /api/watch/home GET+POST. HTTP 200 scenes=[].
+[done] D8: CaptureView.swift — 2x2 quick-log (water/caffeine/supplement/protocol) + voice note sheet.
+[done] D9: VoiceNoteView.swift — dictation input, tag picker, POST /api/watch/capture/voice.
 
 ## Phase E — Enhancements
 [done] E0: TyFiWatch.entitlements created with com.apple.developer.healthkit capability.
 [done] E0: project.yml — HealthKit entitlements path + NSHealthShareUsageDescription + NSHealthUpdateUsageDescription added.
-[pending] E1-E9: HealthKit data reads (HRV, steps, SpO2) not yet wired in Swift.
+[done] E1: HealthKitManager.swift — HKWorkoutSession (mindAndBody/indoor) start/stop. BreathworkView.swift updated to call requestAuth()+startBreathworkSession() on start, stopBreathworkSession() on stop + .task{requestAuth()}.
+[done] E2: DB migration — health_fasting_logs ADD COLUMN target_hours numeric, protocol text. /api/watch/fasting updated: stage label (Fed/Digestive Rest/Fat Burning/Ketosis/Deep Ketosis/Autophagy), protocol picker (13:11/16:8/18:6/20:4/OMAD/36h), dynamic target ring. FastingView.swift updated: ProtocolPickerView sheet, stage badge, protocol display. HTTP 200: stage=Deep Ketosis elapsed=18.93h reached_target=true.
 
 ## Phase F — WidgetKit
-[pending] F1: WidgetKit complication target not yet added to project.yml.
+[done] F1: TyFiWatchComplications/ target added. TyFiComplicationsBundle.swift — 5 widgets: GlucoseWidget/RecoveryWidget/StepsWidget/WaterWidget/HRVWidget. Supports .accessoryCircular/.accessoryCorner/.accessoryInline. Reads /api/watch/snapshot every 15min via keychain token. project.yml updated: TyFiWatchComplications target (app-extension, watchOS 11.5, bundle fyi.tyfi.watch.complications) + scheme build includes complications.
 
 ## Phase G/H — Decisions / Deferrals
 [decision-needed] G1: NFC tag scan — options: (a) iOS companion app with Core NFC + handoff to watch, (b) defer entirely. No watch-side build until Ty decides.
@@ -40,9 +47,11 @@
 ## Phase I — Device Install
 [pending-hardware] I1: Device install blocked on Gecko being reachable from hearth LAN (192.168.20.x). Device UDID: DD16DE6F-5CCC-515B-9C25-C2B71AC4B379. Command when ready: xcrun devicectl device install app --device DD16DE6F-5CCC-515B-9C25-C2B71AC4B379 <signed .app>
 
-## Tab Order (RootView — 12 screens)
+## Tab Order (RootView — 18 screens)
 1. NowView 2. WaterView 3. ProtocolView 4. ReadinessView 5. SleepView 6. TrendsView
 7. NutritionView 8. Zone2View 9. LiveSensorsView 10. SessionTimerView 11. FastingView 12. BreathworkView
+13. WindDownView 14. EnvironmentView 15. CheckInView 16. FlightView 17. HomeView 18. CaptureView
+(VoiceNoteView presented as sheet from CaptureView)
 
 ## Infra Notes
 - wmp branch: master. tyfi-watchos branch: main.
