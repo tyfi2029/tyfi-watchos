@@ -4,10 +4,9 @@ import Foundation
 /// Contract (verified against tyfi2029/wmp origin/master, 2026-06-14):
 ///  - Base: https://life.tyfi.fyi
 ///  - Envelope: { "ok": true, "data": {...} } | { "ok": false, "error": "..." }
-///  - Auth: Authorization: Bearer <raw>  (token issued once by POST /api/watch/auth/token;
+///  - Auth: Authorization: Bearer <raw>  (token issued once by POST /api/watch/auth/redeem;
 ///          only its SHA-256 is stored server-side). Single-user.
-/// Only /api/watch/* and /api/glance accept this bearer token — health/* require the
-/// webhook token and are NOT callable from the watch (see gap re-audit 2026-06-14).
+/// Only /api/watch/* accepts this bearer token — /api/glance is Authelia-gated and NOT watch-callable.
 enum APIError: Error { case notAuthed, http(Int), envelope(String), decode }
 
 struct Envelope<T: Decodable>: Decodable {
@@ -20,6 +19,8 @@ actor API {
     static let shared = API()
     private let base = URL(string: "https://life.tyfi.fyi")!
     private let session = URLSession(configuration: .default)
+
+    // MARK: Authenticated requests (require paired token)
 
     private func request(_ path: String, method: String = "GET", body: Data? = nil) throws -> URLRequest {
         guard let token = WatchAuth.shared.token else { throw APIError.notAuthed }
@@ -39,6 +40,19 @@ actor API {
         let data = try JSONEncoder().encode(body)
         return try await send(request(path, method: "POST", body: data), as: T.self)
     }
+
+    // MARK: Unauthenticated request (used by PairingView to redeem a code)
+
+    func postPublic<T: Decodable, B: Encodable>(_ path: String, body: B, as _: T.Type) async throws -> T {
+        let data = try JSONEncoder().encode(body)
+        var req = URLRequest(url: base.appendingPathComponent(path))
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = data
+        return try await send(req, as: T.self)
+    }
+
+    // MARK: Private
 
     private func send<T: Decodable>(_ req: URLRequest, as _: T.Type) async throws -> T {
         let (data, resp) = try await session.data(for: req)
