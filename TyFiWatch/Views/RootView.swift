@@ -1,9 +1,22 @@
 import SwiftUI
 
-/// App opens to Now; remaining screens reachable by horizontal paging
-/// (Smart Stack nudges + Action button → Voice handled elsewhere). IA per handoff.
+/// Entry point. Shows PairingView until a valid Keychain token is present,
+/// then switches to the main tab carousel. No network call on launch.
 struct RootView: View {
+    @State private var isPaired = WatchAuth.shared.isPaired
+
     var body: some View {
+        Group {
+            if isPaired {
+                mainTabView
+            } else {
+                PairingView(onPaired: { isPaired = true })
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var mainTabView: some View {
         TabView {
             NowView()
             WaterView()
