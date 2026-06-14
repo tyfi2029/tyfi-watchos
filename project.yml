@@ -25,6 +25,13 @@ targets:
         WKApplication: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        NSHealthShareUsageDescription: "TyFi reads your health data to display readiness, sleep, and activity metrics."
+        NSHealthUpdateUsageDescription: "TyFi writes workout and breathing session data to Health."
+    entitlements:
+      path: TyFiWatch/TyFiWatch.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: fyi.tyfi.watch.watchkitapp
