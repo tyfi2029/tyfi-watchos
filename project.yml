@@ -9,7 +9,7 @@ settings:
     SWIFT_VERSION: "6.0"
     MARKETING_VERSION: "1.0.0"
     CURRENT_PROJECT_VERSION: "1"
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: "E5HE9TGHFQ"
     CODE_SIGN_STYLE: Automatic
 targets:
   TyFiWatch:
