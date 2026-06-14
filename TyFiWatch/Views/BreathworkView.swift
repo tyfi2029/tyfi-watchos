@@ -1,9 +1,7 @@
 import SwiftUI
 
-/// Breathwork — 4-7-8 cadence engine (watch-side) that records the session via
-/// /api/watch/breath (start → breathing_sessions row; end → completes it with
-/// pre/post HRV deltas). Live HealthKit HR/HRV coupling is a follow-up requiring
-/// the HealthKit capability (flagged) — the cadence + record path ships here.
+/// Breathwork — 4-7-8 cadence engine (watch-side) with HKWorkoutSession for live HR capture.
+/// API session records the exercise; HealthKit captures the heart rate data.
 enum BreathPhase: String {
     case idle = "Tap to begin"
     case inhale = "Inhale"
@@ -29,6 +27,8 @@ final class BreathModel: ObservableObject {
     func start() async {
         cycle = 0
         startedAt = Date()
+        await HealthKitManager.shared.requestAuth()
+        await HealthKitManager.shared.startBreathworkSession()
         do {
             let res = try await API.shared.post(
                 "/api/watch/breath",
@@ -39,7 +39,7 @@ final class BreathModel: ObservableObject {
                 as: BreathStartResult.self)
             sessionId = res.session?.session_id
             self.error = nil
-        } catch { self.error = "Record offline" } // still run the cadence locally
+        } catch { self.error = "Record offline" }
         running = true
         advance(.inhale)
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
@@ -49,6 +49,7 @@ final class BreathModel: ObservableObject {
 
     func stop() async {
         timer?.invalidate(); running = false; phase = .idle
+        let _ = await HealthKitManager.shared.stopBreathworkSession()
         guard let sid = sessionId else { return }
         let dur = startedAt.map { Int(Date().timeIntervalSince($0)) }
         do {
@@ -111,6 +112,7 @@ struct BreathworkView: View {
         .padding(.horizontal, 6)
         .frame(maxHeight: .infinity)
         .background(Tokens.C.bg)
+        .task { await HealthKitManager.shared.requestAuth() }
     }
 }
 
