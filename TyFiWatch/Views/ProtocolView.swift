@@ -7,8 +7,8 @@ final class ProtocolModel: ObservableObject {
 
     func load() async {
         do { segments = try await API.shared.get("/api/watch/protocol/today", as: ProtocolToday.self).segments; error = nil }
-        catch APIError.notAuthed { error = "Pair watch" }
-        catch { error = "Offline" }
+        catch APIError.notAuthed { self.error = "Pair watch" }
+        catch { self.error = "Offline" }
     }
 
     func toggle(_ item: ProtocolItem) async {

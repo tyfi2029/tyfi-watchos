@@ -8,8 +8,8 @@ final class WaterModel: ObservableObject {
 
     func load() async {
         do { today = try await API.shared.get("/api/watch/hydration/today", as: WaterToday.self); error = nil }
-        catch APIError.notAuthed { error = "Pair watch" }
-        catch { error = "Offline" }
+        catch APIError.notAuthed { self.error = "Pair watch" }
+        catch { self.error = "Offline" }
     }
 
     func log(ml: Double) async {

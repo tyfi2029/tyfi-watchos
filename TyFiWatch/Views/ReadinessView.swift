@@ -9,8 +9,8 @@ final class ReadinessModel: ObservableObject {
 
     func load() async {
         do { r = try await API.shared.get("/api/watch/snapshot", as: Snapshot.self).readiness; error = nil }
-        catch APIError.notAuthed { error = "Pair watch" }
-        catch { error = "Offline" }
+        catch APIError.notAuthed { self.error = "Pair watch" }
+        catch { self.error = "Offline" }
     }
 }
 
