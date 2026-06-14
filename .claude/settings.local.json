@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xcodebuild -version)",
+      "Bash(env)",
+      "Bash(curl -s -m 8 -o /dev/null -w \"life.tyfi.fyi:%{http_code}\\\\n\" https://life.tyfi.fyi/api/sync/status)",
+      "Bash(curl -s -m 8 -o /dev/null -w \"watch/snapshot:%{http_code}\\\\n\" https://life.tyfi.fyi/api/watch/snapshot)",
+      "Bash(curl -s -m 8 -o /dev/null -w \"glance:%{http_code}\\\\n\" https://life.tyfi.fyi/api/glance)",
+      "Bash(gh auth *)",
+      "Read(//Users/hearth/wmp/**)",
+      "Bash(ls src/app/api/watch)",
+      "Bash(ls src/app/api/glance)",
+      "Bash(ls src/app/api/sessions)",
+      "Bash(curl -s -m 12 -X POST https://n8n.tyfi.fyi/webhook/session-coord -H 'Content-Type: application/json' -H 'X-Webhook-Token: tyfi-wh-R8mK4xTv2pLn9QjW5cYb3dFh' -d '{\"action\":\"add_note\",\"session_id\":\"__CMDSUB_OUTPUT__\",\"params\":{\"note\":\"Phase 0 done: watch gap re-audit committed to development-hub checkpoints/2026-06-14-watch-gap-reaudit.md. KEY FINDING: all health/* routes use requireWebhookAuth; watch must not carry WEBHOOK_TOKEN, so only /watch/* + /glance are watch-callable. 10 BACKED, 11 PARTIAL \\(no watch-auth path -> dispatch needed\\), 3 MISSING \\(Fasting/Breathwork/Garden\\). Phase-1 screens Now/Water/Protocol/Readiness all cleanly watch-auth BACKED.\"}}')",
+      "Bash(xcodegen generate *)",
+      "Bash(xcodebuild -list -project TyFiWatch.xcodeproj)",
+      "Bash(set -o pipefail)",
+      "Bash(xcodebuild -project TyFiWatch.xcodeproj -scheme TyFiWatch -destination 'platform=watchOS Simulator,name=Apple Watch Ultra 2 \\(49mm\\)' -configuration Debug CODE_SIGNING_ALLOWED=NO build)",
+      "Bash(tee /tmp/watch-build.log)",
+      "Bash(xcrun simctl *)",
+      "Bash(xcodebuild -showsdks)",
+      "Bash(xcodebuild -showdestinations -project /Users/hearth/tyfi-watchos/TyFiWatch.xcodeproj -scheme TyFiWatch)",
+      "Bash(xcodebuild -project TyFiWatch.xcodeproj -scheme TyFiWatch -sdk watchsimulator11.5 -destination 'generic/platform=watchOS Simulator' -configuration Debug CODE_SIGNING_ALLOWED=NO build)",
+      "Bash(tee /tmp/watch-build-generic.log)",
+      "Bash(xcodebuild -downloadPlatform watchOS -buildVersion 11.5)",
+      "Bash(tee /tmp/watch-platform-dl.log)",
+      "Bash(git init *)",
+      "Bash(git checkout *)",
+      "Bash(git branch *)",
+      "Bash(git config *)",
+      "Bash(git add *)",
+      "Bash(git remote *)",
+      "Bash(git push *)"
+    ]
+  }
+}
