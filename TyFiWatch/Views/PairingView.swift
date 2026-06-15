@@ -29,13 +29,12 @@ struct PairingView: View {
                         .multilineTextAlignment(.center)
 
                     TextField("000000", text: $digits)
-                        .keyboardType(.numberPad)
                         .multilineTextAlignment(.center)
                         .font(.system(size: 30, weight: .bold, design: .monospaced))
                         .foregroundStyle(Tokens.C.accent)
                         .focused($focused)
                         .onChange(of: digits) { _, new in
-                            let filtered = String(new.filter(\.isNumber).prefix(6))
+                            let filtered = String(new.filter { $0.isNumber }.prefix(6))
                             digits = filtered
                             if filtered.count == 6 {
                                 Task { await redeem(filtered) }
