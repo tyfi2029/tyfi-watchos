@@ -49,7 +49,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: fyi.tyfi.watch.complications
         INFOPLIST_EXTENSION_POINT_IDENTIFIER: com.apple.widgetkit-extension
-        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "5.0"
         DEVELOPMENT_TEAM: "E5HE9TGHFQ"
         CODE_SIGN_STYLE: Automatic
     dependencies:
