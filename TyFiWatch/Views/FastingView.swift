@@ -14,12 +14,12 @@ final class FastingModel: ObservableObject {
         catch { self.error = "Offline" }
     }
 
-    func start(protocol proto: String, targetHours: Double) async {
+    func start(`protocol` proto: String, targetHours: Double) async {
         busy = true; defer { busy = false }
-        struct StartBody: Encodable { let action: String; let protocol: String; let target_hours: Double }
+        struct StartBody: Encodable { let action: String; let `protocol`: String; let target_hours: Double }
         struct R: Decodable { let started: Bool? }
         _ = try? await API.shared.post("/api/watch/fasting",
-            body: StartBody(action: "start", protocol: proto, target_hours: targetHours), as: R.self)
+            body: StartBody(action: "start", `protocol`: proto, target_hours: targetHours), as: R.self)
         await load()
     }
 
@@ -85,7 +85,7 @@ struct FastingView: View {
                 }
 
                 // Protocol display when fasting
-                if let proto = a?.protocol {
+                if let proto = a?.`protocol` {
                     Text(proto).font(Type.caption).foregroundStyle(Tokens.C.ink3)
                 }
 
@@ -108,7 +108,7 @@ struct FastingView: View {
         .sheet(isPresented: $showProtocolPicker) {
             ProtocolPickerView(selected: $selectedProtocol, hours: $selectedHours) {
                 showProtocolPicker = false
-                Task { await model.start(protocol: selectedProtocol, targetHours: selectedHours) }
+                Task { await model.start(`protocol`: selectedProtocol, targetHours: selectedHours) }
             }
         }
     }
