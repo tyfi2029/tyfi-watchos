@@ -1,8 +1,8 @@
-import WidgetKit
+@preconcurrency import WidgetKit
 import SwiftUI
 
 // MARK: - Shared snapshot model (fetched from /api/watch/snapshot)
-struct WatchSnapshot: Codable {
+struct WatchSnapshot: Codable, Sendable {
     var glucose_mg_dl: Int?
     var recovery: Int?
     var water_ml: Double?
@@ -17,7 +17,7 @@ struct TyFiEntry: TimelineEntry {
 }
 
 // MARK: - Keychain token reader (matches WatchAuth.swift kSecAttrService)
-private final class WatchAuthStore {
+private final class WatchAuthStore: @unchecked Sendable {
     static let shared = WatchAuthStore()
     var token: String? {
         let q: [String: Any] = [
@@ -47,12 +47,13 @@ struct TyFiProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<TyFiEntry>) -> Void) {
-        Task {
+        let task = Task {
             let snap = await fetchSnapshot()
             let entry = TyFiEntry(date: Date(), snapshot: snap)
             let next = Calendar.current.date(byAdding: .minute, value: 15, to: Date())!
             completion(Timeline(entries: [entry], policy: .after(next)))
         }
+        _ = task
     }
 
     private func fetchSnapshot() async -> WatchSnapshot {
