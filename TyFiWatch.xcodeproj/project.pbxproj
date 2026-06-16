@@ -1,0 +1,590 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		048DDAFCB3F6B88D0B217A91 /* API.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85899D17B09B0A2FFEF4FFA0 /* API.swift */; };
+		0C6875E94BB05EBDC9FD8716 /* PairingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF71E5162748088B6E980264 /* PairingView.swift */; };
+		2808723F81DB0131EA18DD2D /* Motion.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECD7B431A95993F8FE147556 /* Motion.swift */; };
+		29F0A01F852D87A41220ED87 /* FastingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E64B9DDE046774F028B60E5 /* FastingView.swift */; };
+		2EA0845C44A1E7EAF31C3F30 /* NowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0B5372516D38531B7828C3 /* NowView.swift */; };
+		33BDDF40E4C4FD023A17AC17 /* CaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F02B264B778EACFB17E5991A /* CaptureView.swift */; };
+		33F5223FD8B6403AE4279657 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 55116F132F7760709764C4F4 /* Assets.xcassets */; };
+		348D12784EA75EC3DAAFF8DC /* SleepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5BC41E8566E037C4A994FCD /* SleepView.swift */; };
+		45CAEFDAB33CF25E660D131C /* FlightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05292553CC5F688CEA26F8CF /* FlightView.swift */; };
+		55702C0C7AAAF3116A4209D6 /* TyFiWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ED32C555BE229B5C029A036 /* TyFiWatchApp.swift */; };
+		5BC1C995396F37092CB42928 /* Units.swift in Sources */ = {isa = PBXBuildFile; fileRef = 423C4EC71CED6C971085628D /* Units.swift */; };
+		5C4C2A9BE163E124077BDA9F /* WaterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9D226FC4B03601BA00BB45 /* WaterView.swift */; };
+		5D3642F142CE8FCAC14FD9DF /* CheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FE05B0F85371409D36E8142 /* CheckInView.swift */; };
+		65F5E5FDB5D54EB5ED8D8DFA /* WatchAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5643B66C10DC42D7A0E1C5EF /* WatchAuth.swift */; };
+		6FE60C6FA9477BC1E8F0B90B /* SessionTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ACC0470E951B1552934B4D2 /* SessionTimerView.swift */; };
+		7C04C08B40DDF83F34227438 /* NutritionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71E51D26997ED3F90525E8D8 /* NutritionView.swift */; };
+		80AF093BDDE0DF87218DE126 /* Zone2View.swift in Sources */ = {isa = PBXBuildFile; fileRef = D25FCF2424FD07B3F9F59B78 /* Zone2View.swift */; };
+		84ECC5C79F420CED1746569A /* WindDownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A25489A2E35C53D688CF25 /* WindDownView.swift */; };
+		8CBEF38BB8A819C5EACA3E44 /* TrendsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BEFC0662857460EF1449FA /* TrendsView.swift */; };
+		8EAFB094349ED117E2F5F937 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D28A0DF04166EB1D611993EA /* HomeView.swift */; };
+		A2946171E5715BB127BE4F04 /* TyFiComplicationsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13CC2B86F4F303B4654B0304 /* TyFiComplicationsBundle.swift */; };
+		A70AE599DFFB3663FB786BC3 /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B46AE33E4FEE2619DB021EEC /* HealthKitManager.swift */; };
+		A8B27BE0BD07DD77868D8EB2 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = A16CBCBA8848C389DAA22113 /* Typography.swift */; };
+		A8EC921471E80BB7DC7F882E /* Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ED1AEC452A052EDC74B4207 /* Tokens.swift */; };
+		B636D436A194BAE9D0FFBC00 /* BreathworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD6A2F807FB8D8E3DB688FF9 /* BreathworkView.swift */; };
+		BFDEC518FC64159039B724E6 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4D633B42F756607DCF79DAA /* Components.swift */; };
+		CAFB8E70CA0314E8F02DB317 /* EnvironmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CD76A2526684B2EA031BBAB /* EnvironmentView.swift */; };
+		DCAD7E2C8A4623DB4126F83C /* ReadinessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA64710B549D932DC1594F9 /* ReadinessView.swift */; };
+		EB794517BB45C90957F32DBA /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2EE7E1D6EAEEEFB2A741F8 /* Models.swift */; };
+		EC51B3DF2F3DE05BB589B327 /* VoiceNoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D4EB8EE7F4CB651D6AF2857 /* VoiceNoteView.swift */; };
+		F5A3825D18B9715E6175ECED /* ProtocolView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1BC004A9E92EA3852AA0BCB /* ProtocolView.swift */; };
+		F8A8ED5A0C6BDC877C17949A /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D081C2DFA77D60F654B0E8D9 /* RootView.swift */; };
+		FAC77A6A675200BAF2CD50DF /* LiveSensorsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9CB7298A5B08EA18466689D /* LiveSensorsView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		EC6E54ADBF4E5D18684959C2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C990AFB6D0C9993FFEDBEBF5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 62F25BB51F29F66326FC7EE1;
+			remoteInfo = TyFiWatch;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		05292553CC5F688CEA26F8CF /* FlightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightView.swift; sourceTree = "<group>"; };
+		06A25489A2E35C53D688CF25 /* WindDownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownView.swift; sourceTree = "<group>"; };
+		0B48A6D92735570864BB2C48 /* TyFiWatchComplications.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TyFiWatchComplications.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		13CC2B86F4F303B4654B0304 /* TyFiComplicationsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TyFiComplicationsBundle.swift; sourceTree = "<group>"; };
+		16BEFC0662857460EF1449FA /* TrendsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendsView.swift; sourceTree = "<group>"; };
+		1ED32C555BE229B5C029A036 /* TyFiWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TyFiWatchApp.swift; sourceTree = "<group>"; };
+		1F770493796D0B5CF33BEF0A /* TyFiWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TyFiWatch.entitlements; sourceTree = "<group>"; };
+		1FE05B0F85371409D36E8142 /* CheckInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInView.swift; sourceTree = "<group>"; };
+		2E64B9DDE046774F028B60E5 /* FastingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingView.swift; sourceTree = "<group>"; };
+		423C4EC71CED6C971085628D /* Units.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Units.swift; sourceTree = "<group>"; };
+		4ACC0470E951B1552934B4D2 /* SessionTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionTimerView.swift; sourceTree = "<group>"; };
+		4D4EB8EE7F4CB651D6AF2857 /* VoiceNoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceNoteView.swift; sourceTree = "<group>"; };
+		4F2EE7E1D6EAEEEFB2A741F8 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		55116F132F7760709764C4F4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		5643B66C10DC42D7A0E1C5EF /* WatchAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchAuth.swift; sourceTree = "<group>"; };
+		6ED1AEC452A052EDC74B4207 /* Tokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tokens.swift; sourceTree = "<group>"; };
+		71E51D26997ED3F90525E8D8 /* NutritionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutritionView.swift; sourceTree = "<group>"; };
+		85899D17B09B0A2FFEF4FFA0 /* API.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = API.swift; sourceTree = "<group>"; };
+		8CD76A2526684B2EA031BBAB /* EnvironmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentView.swift; sourceTree = "<group>"; };
+		A16CBCBA8848C389DAA22113 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
+		B46AE33E4FEE2619DB021EEC /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
+		B9E4AD43C48C98D199FDD6CD /* TyFiWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TyFiWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C1BC004A9E92EA3852AA0BCB /* ProtocolView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolView.swift; sourceTree = "<group>"; };
+		C4D633B42F756607DCF79DAA /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		C5BC41E8566E037C4A994FCD /* SleepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepView.swift; sourceTree = "<group>"; };
+		CCA64710B549D932DC1594F9 /* ReadinessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessView.swift; sourceTree = "<group>"; };
+		D081C2DFA77D60F654B0E8D9 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		D25FCF2424FD07B3F9F59B78 /* Zone2View.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zone2View.swift; sourceTree = "<group>"; };
+		D28A0DF04166EB1D611993EA /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		DD6A2F807FB8D8E3DB688FF9 /* BreathworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreathworkView.swift; sourceTree = "<group>"; };
+		E2A9019C7BA87587ECEE961B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		EA0B5372516D38531B7828C3 /* NowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowView.swift; sourceTree = "<group>"; };
+		ECD7B431A95993F8FE147556 /* Motion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Motion.swift; sourceTree = "<group>"; };
+		EF71E5162748088B6E980264 /* PairingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairingView.swift; sourceTree = "<group>"; };
+		F02B264B778EACFB17E5991A /* CaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureView.swift; sourceTree = "<group>"; };
+		F9CB7298A5B08EA18466689D /* LiveSensorsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSensorsView.swift; sourceTree = "<group>"; };
+		FC9D226FC4B03601BA00BB45 /* WaterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaterView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		34F1017D5454DDB815208B41 /* TyFiWatchComplications */ = {
+			isa = PBXGroup;
+			children = (
+				13CC2B86F4F303B4654B0304 /* TyFiComplicationsBundle.swift */,
+			);
+			path = TyFiWatchComplications;
+			sourceTree = "<group>";
+		};
+		5670BD26FAF75D14DDA261F8 = {
+			isa = PBXGroup;
+			children = (
+				D1B9757946D230E16E937BAB /* TyFiWatch */,
+				34F1017D5454DDB815208B41 /* TyFiWatchComplications */,
+				ED7FC2D63CCFCDF412435EB4 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A9A12F823DD16506A38CF268 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				85899D17B09B0A2FFEF4FFA0 /* API.swift */,
+				B46AE33E4FEE2619DB021EEC /* HealthKitManager.swift */,
+				5643B66C10DC42D7A0E1C5EF /* WatchAuth.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		B91C5D918A9E5A28B6D09143 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				4F2EE7E1D6EAEEEFB2A741F8 /* Models.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		C3A7B045196D5165870D3925 /* DesignSystem */ = {
+			isa = PBXGroup;
+			children = (
+				C4D633B42F756607DCF79DAA /* Components.swift */,
+				ECD7B431A95993F8FE147556 /* Motion.swift */,
+				6ED1AEC452A052EDC74B4207 /* Tokens.swift */,
+				A16CBCBA8848C389DAA22113 /* Typography.swift */,
+				423C4EC71CED6C971085628D /* Units.swift */,
+			);
+			path = DesignSystem;
+			sourceTree = "<group>";
+		};
+		D1B9757946D230E16E937BAB /* TyFiWatch */ = {
+			isa = PBXGroup;
+			children = (
+				55116F132F7760709764C4F4 /* Assets.xcassets */,
+				E2A9019C7BA87587ECEE961B /* Info.plist */,
+				1F770493796D0B5CF33BEF0A /* TyFiWatch.entitlements */,
+				1ED32C555BE229B5C029A036 /* TyFiWatchApp.swift */,
+				C3A7B045196D5165870D3925 /* DesignSystem */,
+				B91C5D918A9E5A28B6D09143 /* Models */,
+				A9A12F823DD16506A38CF268 /* Services */,
+				D4B3FF26D9077E3A26E162BE /* Views */,
+			);
+			path = TyFiWatch;
+			sourceTree = "<group>";
+		};
+		D4B3FF26D9077E3A26E162BE /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				DD6A2F807FB8D8E3DB688FF9 /* BreathworkView.swift */,
+				F02B264B778EACFB17E5991A /* CaptureView.swift */,
+				1FE05B0F85371409D36E8142 /* CheckInView.swift */,
+				8CD76A2526684B2EA031BBAB /* EnvironmentView.swift */,
+				2E64B9DDE046774F028B60E5 /* FastingView.swift */,
+				05292553CC5F688CEA26F8CF /* FlightView.swift */,
+				D28A0DF04166EB1D611993EA /* HomeView.swift */,
+				F9CB7298A5B08EA18466689D /* LiveSensorsView.swift */,
+				EA0B5372516D38531B7828C3 /* NowView.swift */,
+				71E51D26997ED3F90525E8D8 /* NutritionView.swift */,
+				EF71E5162748088B6E980264 /* PairingView.swift */,
+				C1BC004A9E92EA3852AA0BCB /* ProtocolView.swift */,
+				CCA64710B549D932DC1594F9 /* ReadinessView.swift */,
+				D081C2DFA77D60F654B0E8D9 /* RootView.swift */,
+				4ACC0470E951B1552934B4D2 /* SessionTimerView.swift */,
+				C5BC41E8566E037C4A994FCD /* SleepView.swift */,
+				16BEFC0662857460EF1449FA /* TrendsView.swift */,
+				4D4EB8EE7F4CB651D6AF2857 /* VoiceNoteView.swift */,
+				FC9D226FC4B03601BA00BB45 /* WaterView.swift */,
+				06A25489A2E35C53D688CF25 /* WindDownView.swift */,
+				D25FCF2424FD07B3F9F59B78 /* Zone2View.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		ED7FC2D63CCFCDF412435EB4 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B9E4AD43C48C98D199FDD6CD /* TyFiWatch.app */,
+				0B48A6D92735570864BB2C48 /* TyFiWatchComplications.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		62F25BB51F29F66326FC7EE1 /* TyFiWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 22E0DB98964D316F8B107BF5 /* Build configuration list for PBXNativeTarget "TyFiWatch" */;
+			buildPhases = (
+				C24452773017527E9A91D74E /* Sources */,
+				91E2215E14D1E27F26E3E2B7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TyFiWatch;
+			packageProductDependencies = (
+			);
+			productName = TyFiWatch;
+			productReference = B9E4AD43C48C98D199FDD6CD /* TyFiWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+		B8AA6D9AE911916EAB63EC9A /* TyFiWatchComplications */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EF4599AD6A212DF85032823A /* Build configuration list for PBXNativeTarget "TyFiWatchComplications" */;
+			buildPhases = (
+				67CD53ED2CFE4270A407684B /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				94E3C300EDFC7996E3FB8261 /* PBXTargetDependency */,
+			);
+			name = TyFiWatchComplications;
+			packageProductDependencies = (
+			);
+			productName = TyFiWatchComplications;
+			productReference = 0B48A6D92735570864BB2C48 /* TyFiWatchComplications.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C990AFB6D0C9993FFEDBEBF5 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					62F25BB51F29F66326FC7EE1 = {
+						DevelopmentTeam = E5HE9TGHFQ;
+						ProvisioningStyle = Manual;
+					};
+					B8AA6D9AE911916EAB63EC9A = {
+						DevelopmentTeam = E5HE9TGHFQ;
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = B0E8279F70A74B06C888388C /* Build configuration list for PBXProject "TyFiWatch" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 5670BD26FAF75D14DDA261F8;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = ED7FC2D63CCFCDF412435EB4 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				62F25BB51F29F66326FC7EE1 /* TyFiWatch */,
+				B8AA6D9AE911916EAB63EC9A /* TyFiWatchComplications */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		91E2215E14D1E27F26E3E2B7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				33F5223FD8B6403AE4279657 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		67CD53ED2CFE4270A407684B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A2946171E5715BB127BE4F04 /* TyFiComplicationsBundle.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C24452773017527E9A91D74E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				048DDAFCB3F6B88D0B217A91 /* API.swift in Sources */,
+				B636D436A194BAE9D0FFBC00 /* BreathworkView.swift in Sources */,
+				33BDDF40E4C4FD023A17AC17 /* CaptureView.swift in Sources */,
+				5D3642F142CE8FCAC14FD9DF /* CheckInView.swift in Sources */,
+				BFDEC518FC64159039B724E6 /* Components.swift in Sources */,
+				CAFB8E70CA0314E8F02DB317 /* EnvironmentView.swift in Sources */,
+				29F0A01F852D87A41220ED87 /* FastingView.swift in Sources */,
+				45CAEFDAB33CF25E660D131C /* FlightView.swift in Sources */,
+				A70AE599DFFB3663FB786BC3 /* HealthKitManager.swift in Sources */,
+				8EAFB094349ED117E2F5F937 /* HomeView.swift in Sources */,
+				FAC77A6A675200BAF2CD50DF /* LiveSensorsView.swift in Sources */,
+				EB794517BB45C90957F32DBA /* Models.swift in Sources */,
+				2808723F81DB0131EA18DD2D /* Motion.swift in Sources */,
+				2EA0845C44A1E7EAF31C3F30 /* NowView.swift in Sources */,
+				7C04C08B40DDF83F34227438 /* NutritionView.swift in Sources */,
+				0C6875E94BB05EBDC9FD8716 /* PairingView.swift in Sources */,
+				F5A3825D18B9715E6175ECED /* ProtocolView.swift in Sources */,
+				DCAD7E2C8A4623DB4126F83C /* ReadinessView.swift in Sources */,
+				F8A8ED5A0C6BDC877C17949A /* RootView.swift in Sources */,
+				6FE60C6FA9477BC1E8F0B90B /* SessionTimerView.swift in Sources */,
+				348D12784EA75EC3DAAFF8DC /* SleepView.swift in Sources */,
+				A8EC921471E80BB7DC7F882E /* Tokens.swift in Sources */,
+				8CBEF38BB8A819C5EACA3E44 /* TrendsView.swift in Sources */,
+				55702C0C7AAAF3116A4209D6 /* TyFiWatchApp.swift in Sources */,
+				A8B27BE0BD07DD77868D8EB2 /* Typography.swift in Sources */,
+				5BC1C995396F37092CB42928 /* Units.swift in Sources */,
+				EC51B3DF2F3DE05BB589B327 /* VoiceNoteView.swift in Sources */,
+				65F5E5FDB5D54EB5ED8D8DFA /* WatchAuth.swift in Sources */,
+				5C4C2A9BE163E124077BDA9F /* WaterView.swift in Sources */,
+				84ECC5C79F420CED1746569A /* WindDownView.swift in Sources */,
+				80AF093BDDE0DF87218DE126 /* Zone2View.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		94E3C300EDFC7996E3FB8261 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 62F25BB51F29F66326FC7EE1 /* TyFiWatch */;
+			targetProxy = EC6E54ADBF4E5D18684959C2 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		7957AAF6A97F43DEF6060206 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = E5HE9TGHFQ;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+				WATCHOS_DEPLOYMENT_TARGET = 11.5;
+			};
+			name = Release;
+		};
+		7F8B9959C35BD3CA3B51CD5A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = E5HE9TGHFQ;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+				WATCHOS_DEPLOYMENT_TARGET = 11.5;
+			};
+			name = Debug;
+		};
+		BEA89DB652D93AB675E7A00A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = TyFiWatch/TyFiWatch.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_STYLE = Manual;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TyFiWatch/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = TyFi;
+				PRODUCT_BUNDLE_IDENTIFIER = fyi.tyfi.watch.watchkitapp;
+				PROVISIONING_PROFILE_SPECIFIER = "TyFiWatch AppStore CI";
+				SDKROOT = watchos;
+				SKIP_INSTALL = NO;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.5;
+			};
+			name = Debug;
+		};
+		C12D650825FF9DF6D5068718 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = E5HE9TGHFQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_EXTENSION_POINT_IDENTIFIER = "com.apple.widgetkit-extension";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = fyi.tyfi.watch.complications;
+				PROVISIONING_PROFILE_SPECIFIER = "TyFiWatch Complications AppStore CI";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.5;
+			};
+			name = Release;
+		};
+		DD6BCDEE11DFFD46E49CB322 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = E5HE9TGHFQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_EXTENSION_POINT_IDENTIFIER = "com.apple.widgetkit-extension";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = fyi.tyfi.watch.complications;
+				PROVISIONING_PROFILE_SPECIFIER = "TyFiWatch Complications AppStore CI";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.5;
+			};
+			name = Debug;
+		};
+		FA1C7E7424640A30967BFBC9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = TyFiWatch/TyFiWatch.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_STYLE = Manual;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TyFiWatch/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = TyFi;
+				PRODUCT_BUNDLE_IDENTIFIER = fyi.tyfi.watch.watchkitapp;
+				PROVISIONING_PROFILE_SPECIFIER = "TyFiWatch AppStore CI";
+				SDKROOT = watchos;
+				SKIP_INSTALL = NO;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.5;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		22E0DB98964D316F8B107BF5 /* Build configuration list for PBXNativeTarget "TyFiWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BEA89DB652D93AB675E7A00A /* Debug */,
+				FA1C7E7424640A30967BFBC9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B0E8279F70A74B06C888388C /* Build configuration list for PBXProject "TyFiWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7F8B9959C35BD3CA3B51CD5A /* Debug */,
+				7957AAF6A97F43DEF6060206 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		EF4599AD6A212DF85032823A /* Build configuration list for PBXNativeTarget "TyFiWatchComplications" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DD6BCDEE11DFFD46E49CB322 /* Debug */,
+				C12D650825FF9DF6D5068718 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = C990AFB6D0C9993FFEDBEBF5 /* Project object */;
+}
