@@ -43,7 +43,7 @@ targets:
         SKIP_INSTALL: NO
         CODE_SIGN_STYLE: Manual
         CODE_SIGN_IDENTITY: "Apple Distribution"
-        PROVISIONING_PROFILE_SPECIFIER: "TyFiWatch AppStore"
+        PROVISIONING_PROFILE_SPECIFIER: "TyFiWatch AppStore CI"
   TyFiWatchComplications:
     type: app-extension
     platform: watchOS
@@ -59,7 +59,7 @@ targets:
         DEVELOPMENT_TEAM: "E5HE9TGHFQ"
         CODE_SIGN_STYLE: Manual
         CODE_SIGN_IDENTITY: "Apple Distribution"
-        PROVISIONING_PROFILE_SPECIFIER: "TyFiWatch Complications AppStore"
+        PROVISIONING_PROFILE_SPECIFIER: "TyFiWatch Complications AppStore CI"
     dependencies:
       - target: TyFiWatch
 schemes:
