@@ -11,12 +11,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Show available Xcode versions
-      run: ls /Applications/ | grep -i xcode || true
-
-    - name: Select latest Xcode
+    - name: Select Xcode 26
       run: |
         XCODE=$(ls /Applications/ | grep -E "^Xcode" | sort -rV | head -1)
+        echo "Using: $XCODE"
         sudo xcode-select -s "/Applications/$XCODE/Contents/Developer"
         xcodebuild -version
 
@@ -70,24 +68,54 @@ jobs:
           -archivePath /tmp/TyFiWatch.xcarchive \
           DEVELOPMENT_TEAM=E5HE9TGHFQ \
           OTHER_CODE_SIGN_FLAGS="--keychain ci.keychain" \
-          2>&1 | tail -20
+          2>&1 | grep -E "error:|warning:|ARCHIVE|Signing"
 
-    - name: Verify archive signed with Distribution cert
-      run: codesign -dvvv /tmp/TyFiWatch.xcarchive/Products/Applications/TyFiWatch.app 2>&1 | grep Authority
-
-    - name: Create IPA
-      run: |
-        mkdir -p /tmp/Payload
-        cp -r /tmp/TyFiWatch.xcarchive/Products/Applications/TyFiWatch.app /tmp/Payload/
-        cd /tmp && zip -qr TyFiWatch.ipa Payload/
-        echo "IPA: $(du -sh /tmp/TyFiWatch.ipa)"
-
-    - name: Upload to App Store Connect
+    - name: Export IPA
       env:
         KEY_ID: ${{ secrets.ASC_KEY_ID }}
         ISSUER: ${{ secrets.ASC_ISSUER_ID }}
       run: |
-        xcrun altool --upload-package /tmp/TyFiWatch.ipa \
+        cat > /tmp/ExportOptions.plist << 'PLIST'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+          <key>method</key>
+          <string>app-store-connect</string>
+          <key>teamID</key>
+          <string>E5HE9TGHFQ</string>
+          <key>signingStyle</key>
+          <string>manual</string>
+          <key>provisioningProfiles</key>
+          <dict>
+            <key>fyi.tyfi.watch.watchkitapp</key>
+            <string>TyFiWatch AppStore CI</string>
+            <key>fyi.tyfi.watch.complications</key>
+            <string>TyFiWatch Complications AppStore CI</string>
+          </dict>
+          <key>uploadBitcode</key>
+          <false/>
+          <key>uploadSymbols</key>
+          <true/>
+        </dict>
+        </plist>
+        PLIST
+        xcodebuild -exportArchive \
+          -archivePath /tmp/TyFiWatch.xcarchive \
+          -exportPath /tmp/TyFiExport \
+          -exportOptionsPlist /tmp/ExportOptions.plist \
+          OTHER_CODE_SIGN_FLAGS="--keychain ci.keychain" \
+          2>&1 | grep -E "error:|EXPORT|exported|IPA"
+        ls -la /tmp/TyFiExport/
+
+    - name: Upload to TestFlight
+      env:
+        KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+      run: |
+        IPA=$(find /tmp/TyFiExport -name "*.ipa" | head -1)
+        echo "Uploading: $IPA"
+        xcrun altool --upload-package "$IPA" \
           --type watchos \
           --asc-public-id "$ISSUER" \
           --apple-id 6780694548 \
@@ -96,4 +124,4 @@ jobs:
           --bundle-id fyi.tyfi.watch.watchkitapp \
           --apiKey "$KEY_ID" \
           --apiIssuer "$ISSUER" \
-          2>&1
+          --verbose 2>&1
