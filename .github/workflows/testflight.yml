@@ -64,14 +64,49 @@ jobs:
         cp -r "$APP" /tmp/Payload/TyFiWatch.app
         cd /tmp && zip -qr TyFiWatch.ipa Payload/
         echo "IPA: $(du -sh /tmp/TyFiWatch.ipa)"
-    - name: Upload via altool --upload-app -t watchos (ITMS legacy)
+    - name: Find transport tools
+      run: |
+        echo "=== iTMSTransporter locations ==="
+        find /Applications/Xcode*.app -name "iTMSTransporter" 2>/dev/null || echo "not in Xcode"
+        ls /usr/bin/iTMSTransporter 2>/dev/null || echo "not in /usr/bin"
+        find /usr/local -name "iTMSTransporter" 2>/dev/null || echo "not in /usr/local"
+        echo "=== Transporter.app ==="
+        ls /Applications/Transporter.app 2>/dev/null || echo "not installed"
+        echo "=== altool location ==="
+        xcrun -f altool 2>/dev/null || echo "altool not found via xcrun"
+        echo "=== altool upload-app help ==="
+        xcrun altool --help 2>&1 | grep -A5 "upload-app" || true
+    - name: Create ITMSP and upload via altool upload-app with ios type
       env:
         KEY_ID: ${{ secrets.ASC_KEY_ID }}
         ISSUER: ${{ secrets.ASC_ISSUER_ID }}
       run: |
+        # Compute IPA md5 and size for ITMSP metadata
+        IPA_MD5=$(md5 -q /tmp/TyFiWatch.ipa)
+        IPA_SIZE=$(stat -f%z /tmp/TyFiWatch.ipa)
+        echo "IPA md5=$IPA_MD5 size=$IPA_SIZE"
+        # Create ITMSP package
+        mkdir -p /tmp/TyFiWatch.itmsp
+        cp /tmp/TyFiWatch.ipa /tmp/TyFiWatch.itmsp/
+        cat > /tmp/TyFiWatch.itmsp/metadata.xml << XMLEOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <package version="software5.8" xmlns="http://apple.com/itunes/importer">
+          <software_assets apple_id="6780694548" bundle_short_version_string="1.0" bundle_version="1">
+            <asset type="bundle">
+              <data_file>
+                <file_name>TyFiWatch.ipa</file_name>
+                <checksum type="md5">${IPA_MD5}</checksum>
+                <size>${IPA_SIZE}</size>
+              </data_file>
+            </asset>
+          </software_assets>
+        </package>
+        XMLEOF
+        cat /tmp/TyFiWatch.itmsp/metadata.xml
+        echo "=== Trying --upload-app with ITMSP and -t iphoneos ==="
         xcrun altool --upload-app \
-          -f /tmp/TyFiWatch.ipa \
-          -t watchos \
+          -f /tmp/TyFiWatch.itmsp \
+          -t iphoneos \
           --apiKey "$KEY_ID" \
           --apiIssuer "$ISSUER" \
-          --verbose 2>&1
+          --verbose 2>&1 | tail -40
