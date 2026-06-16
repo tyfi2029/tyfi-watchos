@@ -96,17 +96,20 @@ jobs:
         ISSUER: ${{ secrets.ASC_ISSUER_ID }}
         KEY_B64: ${{ secrets.ASC_KEY_P8_BASE64 }}
       run: |
-        # Build Fastlane API key JSON
-        echo "$KEY_B64" | base64 --decode > /tmp/AuthKey.p8
-        cat > /tmp/api_key.json << APIJSON
-        {
-          "key_id": "$KEY_ID",
-          "issuer_id": "$ISSUER",
-          "key_filepath": "/tmp/AuthKey.p8",
-          "duration": 1200,
-          "in_house": false
-        }
-        APIJSON
+        # Decode p8 key content for Fastlane JSON (requires actual key content, not filepath)
+        KEY_CONTENT=$(echo "$KEY_B64" | base64 --decode)
+        python3 -c "
+import json, os
+key = os.environ['KEY_CONTENT']
+d = {
+    'key_id': os.environ['KEY_ID'],
+    'issuer_id': os.environ['ISSUER'],
+    'key': key,
+    'duration': 1200,
+    'in_house': False
+}
+json.dump(d, open('/tmp/api_key.json','w'))
+"
         gem install fastlane --no-document -q 2>&1 | tail -3
         fastlane pilot upload \
           --api_key_path /tmp/api_key.json \
