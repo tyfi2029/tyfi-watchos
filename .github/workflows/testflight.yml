@@ -68,60 +68,34 @@ jobs:
           -archivePath /tmp/TyFiWatch.xcarchive \
           DEVELOPMENT_TEAM=E5HE9TGHFQ \
           OTHER_CODE_SIGN_FLAGS="--keychain ci.keychain" \
-          2>&1 | grep -E "error:|warning:|ARCHIVE|Signing"
+          2>&1 | grep -E "error:|ARCHIVE SUCCEEDED|Signing|CodeSign"
 
-    - name: Export IPA
-      env:
-        KEY_ID: ${{ secrets.ASC_KEY_ID }}
-        ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+    - name: Inspect archive
       run: |
-        cat > /tmp/ExportOptions.plist << 'PLIST'
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
-        <dict>
-          <key>method</key>
-          <string>app-store-connect</string>
-          <key>teamID</key>
-          <string>E5HE9TGHFQ</string>
-          <key>signingStyle</key>
-          <string>manual</string>
-          <key>provisioningProfiles</key>
-          <dict>
-            <key>fyi.tyfi.watch.watchkitapp</key>
-            <string>TyFiWatch AppStore CI</string>
-            <key>fyi.tyfi.watch.complications</key>
-            <string>TyFiWatch Complications AppStore CI</string>
-          </dict>
-          <key>uploadBitcode</key>
-          <false/>
-          <key>uploadSymbols</key>
-          <true/>
-        </dict>
-        </plist>
-        PLIST
-        xcodebuild -exportArchive \
-          -archivePath /tmp/TyFiWatch.xcarchive \
-          -exportPath /tmp/TyFiExport \
-          -exportOptionsPlist /tmp/ExportOptions.plist \
-          OTHER_CODE_SIGN_FLAGS="--keychain ci.keychain" \
-          2>&1 | grep -E "error:|EXPORT|exported|IPA"
-        ls -la /tmp/TyFiExport/
+        echo "=== Archive structure ==="
+        find /tmp/TyFiWatch.xcarchive -name "*.plist" | head -5
+        echo "=== Info.plist ==="
+        plutil -p /tmp/TyFiWatch.xcarchive/Info.plist 2>/dev/null || true
+        echo "=== App Info.plist ==="
+        APP=$(find /tmp/TyFiWatch.xcarchive -name "*.app" | head -1)
+        echo "App path: $APP"
+        plutil -p "$APP/Info.plist" 2>/dev/null | grep -E "Bundle|Platform|Device|Icon" || true
+
+    - name: Create IPA
+      run: |
+        APP=$(find /tmp/TyFiWatch.xcarchive/Products -name "*.app" | head -1)
+        echo "Packaging: $APP"
+        mkdir -p /tmp/Payload
+        cp -r "$APP" /tmp/Payload/TyFiWatch.app
+        cd /tmp && zip -qr TyFiWatch.ipa Payload/
+        echo "IPA size: $(du -sh /tmp/TyFiWatch.ipa)"
 
     - name: Upload to TestFlight
       env:
         KEY_ID: ${{ secrets.ASC_KEY_ID }}
         ISSUER: ${{ secrets.ASC_ISSUER_ID }}
       run: |
-        IPA=$(find /tmp/TyFiExport -name "*.ipa" | head -1)
-        echo "Uploading: $IPA"
-        xcrun altool --upload-package "$IPA" \
-          --type watchos \
-          --asc-public-id "$ISSUER" \
-          --apple-id 6780694548 \
-          --bundle-version 1 \
-          --bundle-short-version-string 1.0 \
-          --bundle-id fyi.tyfi.watch.watchkitapp \
+        xcrun altool --upload-app -f /tmp/TyFiWatch.ipa \
           --apiKey "$KEY_ID" \
           --apiIssuer "$ISSUER" \
           --verbose 2>&1
