@@ -94,9 +94,22 @@ jobs:
       env:
         KEY_ID: ${{ secrets.ASC_KEY_ID }}
         ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        KEY_B64: ${{ secrets.ASC_KEY_P8_BASE64 }}
       run: |
-        xcrun altool --upload-app -f /tmp/TyFiWatch.ipa \
-          --platform watchos \
-          --apiKey "$KEY_ID" \
-          --apiIssuer "$ISSUER" \
-          --verbose 2>&1
+        # Build Fastlane API key JSON
+        echo "$KEY_B64" | base64 --decode > /tmp/AuthKey.p8
+        cat > /tmp/api_key.json << APIJSON
+        {
+          "key_id": "$KEY_ID",
+          "issuer_id": "$ISSUER",
+          "key_filepath": "/tmp/AuthKey.p8",
+          "duration": 1200,
+          "in_house": false
+        }
+        APIJSON
+        gem install fastlane --no-document -q 2>&1 | tail -3
+        fastlane pilot upload \
+          --api_key_path /tmp/api_key.json \
+          --ipa /tmp/TyFiWatch.ipa \
+          --skip_waiting_for_build_processing true \
+          --skip_submission true 2>&1
