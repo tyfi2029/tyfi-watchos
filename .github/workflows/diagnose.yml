@@ -1,0 +1,85 @@
+name: Diagnose Xcode Cloud Build
+on:
+  workflow_dispatch:
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - name: Get Xcode Cloud build artifacts and logs
+      env:
+        KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        KEY_B64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+      run: |
+        echo "$KEY_B64" | base64 --decode > /tmp/asc_key.p8
+        cat << 'PYEOF' > /tmp/diagnose.py
+
+import sys, subprocess, os, time, json, zipfile, io
+
+venv_dir = "/tmp/asc_venv"
+subprocess.check_call([sys.executable, "-m", "venv", venv_dir])
+pip = os.path.join(venv_dir, "bin", "pip")
+subprocess.check_call([pip, "install", "pyjwt", "cryptography", "requests", "-q"])
+site_pkg = subprocess.check_output([os.path.join(venv_dir, "bin", "python3"), "-c",
+    "import site; print(site.getsitepackages()[0])"]).decode().strip()
+sys.path.insert(0, site_pkg)
+
+import jwt, requests
+
+KEY_ID = os.environ["KEY_ID"]
+ISSUER = os.environ["ISSUER"]
+with open("/tmp/asc_key.p8") as f:
+    key_content = f.read()
+
+def make_token():
+    p = {"iss": ISSUER, "iat": int(time.time()), "exp": int(time.time()) + 1200, "aud": "appstoreconnect-v1"}
+    return jwt.encode(p, key_content, algorithm="ES256", headers={"kid": KEY_ID})
+
+BASE = "https://api.appstoreconnect.apple.com/v1"
+RUN_ID = "02eb3522-d320-45b2-91b5-39a6835205f6"
+
+def H():
+    return {"Authorization": "Bearer " + make_token(), "Content-Type": "application/json"}
+
+# Get artifacts for this build run
+r = requests.get(BASE + f"/ciBuildRuns/{RUN_ID}/artifacts", headers=H())
+artifacts = r.json().get("data", [])
+print(f"Found {len(artifacts)} artifacts")
+for a in artifacts:
+    attrs = a["attributes"]
+    print(f"  {attrs.get('fileName','?')} - {attrs.get('fileType','?')} - {attrs.get('downloadUrl','N/A')[:80]}")
+
+# Try to download the log artifact
+for a in artifacts:
+    attrs = a["attributes"]
+    fn = attrs.get("fileName", "")
+    if "log" in fn.lower() or "Log" in fn:
+        url = attrs.get("downloadUrl")
+        if url:
+            print(f"\nDownloading: {fn}")
+            resp = requests.get(url, headers=H(), allow_redirects=True)
+            print(f"  Status: {resp.status_code}, size: {len(resp.content)}")
+            try:
+                z = zipfile.ZipFile(io.BytesIO(resp.content))
+                for name in z.namelist():
+                    print(f"  Zip entry: {name}")
+                    if "Export" in name or "export" in name or "Xcodebuild" in name:
+                        text = z.read(name).decode(errors="replace")
+                        # Find the export error
+                        lines = text.split("\n")
+                        for i, line in enumerate(lines):
+                            if "export" in line.lower() or "error:" in line.lower() or "failed" in line.lower():
+                                start = max(0, i-2)
+                                end = min(len(lines), i+5)
+                                print("---")
+                                print("\n".join(lines[start:end]))
+                                print("---")
+            except Exception as e:
+                print(f"  Not a zip: {e}")
+                # Try text
+                text = resp.content.decode(errors="replace")
+                print(text[:5000])
+
+PYEOF
+        python3 /tmp/diagnose.py
