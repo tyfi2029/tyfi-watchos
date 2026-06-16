@@ -13,6 +13,11 @@ struct RootView: View {
                 PairingView(onPaired: { isPaired = true })
             }
         }
+        // §4.3 — Re-pair when the server rejects the stored token with 401.
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("watchAuthExpired"))) { _ in
+            WatchAuth.shared.clear()
+            isPaired = false
+        }
     }
 
     @ViewBuilder
