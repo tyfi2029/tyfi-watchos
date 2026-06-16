@@ -242,11 +242,11 @@
 				TargetAttributes = {
 					62F25BB51F29F66326FC7EE1 = {
 						DevelopmentTeam = E5HE9TGHFQ;
-						ProvisioningStyle = Manual;
+						ProvisioningStyle = Automatic;
 					};
 					B8AA6D9AE911916EAB63EC9A = {
 						DevelopmentTeam = E5HE9TGHFQ;
-						ProvisioningStyle = Manual;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -372,8 +372,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGN_IDENTITY = "Apple Distribution";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
@@ -433,8 +432,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGN_IDENTITY = "Apple Distribution";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
@@ -474,13 +472,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = TyFiWatch/TyFiWatch.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Distribution";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = TyFiWatch/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TyFi;
 				PRODUCT_BUNDLE_IDENTIFIER = fyi.tyfi.watch.watchkitapp;
-				PROVISIONING_PROFILE_SPECIFIER = "TyFiWatch AppStore CI";
 				SDKROOT = watchos;
 				SKIP_INSTALL = NO;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -491,8 +487,7 @@
 		C12D650825FF9DF6D5068718 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Apple Distribution";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = E5HE9TGHFQ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_EXTENSION_POINT_IDENTIFIER = "com.apple.widgetkit-extension";
@@ -502,7 +497,6 @@
 					"@executable_path/../../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = fyi.tyfi.watch.complications;
-				PROVISIONING_PROFILE_SPECIFIER = "TyFiWatch Complications AppStore CI";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -514,8 +508,7 @@
 		DD6BCDEE11DFFD46E49CB322 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Apple Distribution";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = E5HE9TGHFQ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_EXTENSION_POINT_IDENTIFIER = "com.apple.widgetkit-extension";
@@ -525,7 +518,6 @@
 					"@executable_path/../../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = fyi.tyfi.watch.complications;
-				PROVISIONING_PROFILE_SPECIFIER = "TyFiWatch Complications AppStore CI";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -540,13 +532,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = TyFiWatch/TyFiWatch.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Distribution";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = TyFiWatch/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TyFi;
 				PRODUCT_BUNDLE_IDENTIFIER = fyi.tyfi.watch.watchkitapp;
-				PROVISIONING_PROFILE_SPECIFIER = "TyFiWatch AppStore CI";
 				SDKROOT = watchos;
 				SKIP_INSTALL = NO;
 				TARGETED_DEVICE_FAMILY = 4;
