@@ -7,10 +7,9 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-    - name: Select Xcode 26
+    - name: Select Xcode 16.4
       run: |
-        XCODE=$(ls /Applications/ | grep -E "^Xcode" | sort -rV | head -1)
-        sudo xcode-select -s "/Applications/$XCODE/Contents/Developer"
+        sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
         xcodebuild -version
     - name: Set up keychain
       env:
@@ -25,6 +24,7 @@ jobs:
         security set-keychain-settings -t 7200 ci.keychain
         security import /tmp/dist.p12 -k ci.keychain -P "$P12_PASS" -T /usr/bin/codesign
         security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "ci" ci.keychain
+        security find-identity -v -p codesigning ci.keychain
     - name: Install provisioning profiles
       env:
         PROFILE_MAIN: ${{ secrets.PROFILE_MAIN_BASE64 }}
@@ -47,7 +47,7 @@ jobs:
         chmod +x /tmp/xcodegen/bin/xcodegen
     - name: Generate Xcode project
       run: /tmp/xcodegen/bin/xcodegen generate --spec project.yml --project .
-    - name: Archive
+    - name: Archive with Xcode 16.4
       run: |
         xcodebuild archive \
           -scheme TyFiWatch \
@@ -56,55 +56,60 @@ jobs:
           -archivePath /tmp/TyFiWatch.xcarchive \
           DEVELOPMENT_TEAM=E5HE9TGHFQ \
           OTHER_CODE_SIGN_FLAGS="--keychain ci.keychain" \
-          2>&1 | grep -E "error:|ARCHIVE SUCCEEDED|Signing|CodeSign"
-    - name: Create IPA
+          2>&1 | grep -E "error:|ARCHIVE SUCCEEDED|Signing|CodeSign|warning: "
+    - name: Try exportArchive with method app-store (Xcode 16)
       run: |
-        APP=$(find /tmp/TyFiWatch.xcarchive/Products -name "*.app" | head -1)
-        mkdir -p /tmp/Payload
-        cp -r "$APP" /tmp/Payload/TyFiWatch.app
-        cd /tmp && zip -qr TyFiWatch.ipa Payload/
-        echo "IPA: $(du -sh /tmp/TyFiWatch.ipa)"
-    - name: Try altool upload-app iphoneos and iTMSTransporter
+        cat > /tmp/export.plist << 'PLISTEOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>method</key>
+            <string>app-store</string>
+            <key>teamID</key>
+            <string>E5HE9TGHFQ</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+                <key>fyi.tyfi.watch.watchkitapp</key>
+                <string>TyFiWatch AppStore CI</string>
+                <key>fyi.tyfi.watch.complications</key>
+                <string>TyFiWatch Complications AppStore CI</string>
+            </dict>
+        </dict>
+        </plist>
+        PLISTEOF
+        mkdir -p /tmp/export
+        xcodebuild -exportArchive \
+          -archivePath /tmp/TyFiWatch.xcarchive \
+          -exportPath /tmp/export \
+          -exportOptionsPlist /tmp/export.plist \
+          OTHER_CODE_SIGN_FLAGS="--keychain ci.keychain" 2>&1 | tail -20
+        echo "=== Export directory ==="
+        ls -la /tmp/export/
+    - name: Upload exported IPA
       env:
         KEY_ID: ${{ secrets.ASC_KEY_ID }}
         ISSUER: ${{ secrets.ASC_ISSUER_ID }}
       run: |
-        echo "=== Try 1: altool --upload-app -t iphoneos with IPA ==="
-        xcrun altool --upload-app \
-          -f /tmp/TyFiWatch.ipa \
-          -t iphoneos \
+        IPA=$(find /tmp/export -name "*.ipa" | head -1)
+        echo "IPA: $IPA"
+        if [ -z "$IPA" ]; then
+          echo "No IPA found, creating manually"
+          APP=$(find /tmp/TyFiWatch.xcarchive/Products -name "*.app" | head -1)
+          mkdir -p /tmp/Payload
+          cp -r "$APP" /tmp/Payload/TyFiWatch.app
+          cd /tmp && zip -qr export/TyFiWatch.ipa Payload/
+          IPA=/tmp/export/TyFiWatch.ipa
+        fi
+        unzip -p "$IPA" "Payload/TyFiWatch.app/Info.plist" | plutil -p - || true
+        xcrun altool --upload-package "$IPA" \
+          --type watchos \
+          --asc-public-id "$ISSUER" \
+          --apple-id 6780694548 \
+          --bundle-version 1 \
+          --bundle-short-version-string 1.0 \
+          --bundle-id fyi.tyfi.watch.watchkitapp \
           --apiKey "$KEY_ID" \
-          --apiIssuer "$ISSUER" 2>&1 | tail -10 || true
-
-        echo "=== Try 2: iTMSTransporter from Xcode 16.4 ==="
-        ITMST="/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/iTMSTransporter"
-        "$ITMST" -version 2>&1 | head -3 || true
-
-        IPA_MD5=$(md5 -q /tmp/TyFiWatch.ipa)
-        IPA_SIZE=$(stat -f%z /tmp/TyFiWatch.ipa)
-        mkdir -p /tmp/TyFiWatch.itmsp
-        cp /tmp/TyFiWatch.ipa /tmp/TyFiWatch.itmsp/
-
-        cat > /tmp/TyFiWatch.itmsp/metadata.xml << ENDXML
-        <?xml version="1.0" encoding="UTF-8"?>
-        <package version="software5.8" xmlns="http://apple.com/itunes/importer">
-          <software_assets apple_id="6780694548" bundle_short_version_string="1.0" bundle_version="1">
-            <asset type="bundle">
-              <data_file>
-                <file_name>TyFiWatch.ipa</file_name>
-                <checksum type="md5">${IPA_MD5}</checksum>
-                <size>${IPA_SIZE}</size>
-              </data_file>
-            </asset>
-          </software_assets>
-        </package>
-        ENDXML
-
-        KEY_PATH="$HOME/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8"
-        echo "Uploading via iTMSTransporter..."
-        "$ITMST" -m upload \
-          -f /tmp/TyFiWatch.itmsp \
-          -apiKey "$KEY_ID" \
-          -apiIssuer "$ISSUER" \
-          -apiPrivateKey "$KEY_PATH" \
-          -v eXtreme 2>&1 | tail -40 || true
+          --apiIssuer "$ISSUER" 2>&1
