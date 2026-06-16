@@ -5,7 +5,7 @@ jobs:
   build:
     runs-on: macos-15
     steps:
-    - name: Check Xcode Cloud via ASC API
+    - name: Check Xcode Cloud setup
       env:
         KEY_ID: ${{ secrets.ASC_KEY_ID }}
         ISSUER: ${{ secrets.ASC_ISSUER_ID }}
@@ -13,20 +13,5 @@ jobs:
       run: |
         echo "$KEY_B64" | base64 --decode > /tmp/asc_key.p8
         pip install pyjwt cryptography --quiet --break-system-packages 2>/dev/null
+        echo 'aW1wb3J0IGp3dCwgdGltZSwgcmVxdWVzdHMsIGpzb24sIG9zCktFWV9JRCA9IG9zLmVudmlyb25bIktFWV9JRCJdCklTU1VFUiA9IG9zLmVudmlyb25bIklTU1VFUiJdCndpdGggb3BlbigiL3RtcC9hc2Nfa2V5LnA4IikgYXMgZjoKICAgIGtleV9jb250ZW50ID0gZi5yZWFkKCkKcGF5bG9hZCA9IHsiaXNzIjogSVNTVUVSLCAiaWF0IjogaW50KHRpbWUudGltZSgpKSwgImV4cCI6IGludCh0aW1lLnRpbWUoKSkgKyAxMjAwLCAiYXVkIjogImFwcHN0b3JlY29ubmVjdC12MSJ9CnRva2VuID0gand0LmVuY29kZShwYXlsb2FkLCBrZXlfY29udGVudCwgYWxnb3JpdGhtPSJFUzI1NiIsIGhlYWRlcnM9eyJraWQiOiBLRVlfSUR9KQpIID0geyJBdXRob3JpemF0aW9uIjogZiJCZWFyZXIge3Rva2VufSIsICJDb250ZW50LVR5cGUiOiAiYXBwbGljYXRpb24vanNvbiJ9CnIgPSByZXF1ZXN0cy5nZXQoImh0dHBzOi8vYXBpLmFwcHN0b3JlY29ubmVjdC5hcHBsZS5jb20vdjEvc2NtUHJvdmlkZXJzIiwgaGVhZGVycz1IKQpwcmludChmIlNDTSBQcm92aWRlcnMgKHtyLnN0YXR1c19jb2RlfSk6IiwganNvbi5kdW1wcyhyLmpzb24oKSwgaW5kZW50PTIpWzozMDAwXSkKcjIgPSByZXF1ZXN0cy5nZXQoImh0dHBzOi8vYXBpLmFwcHN0b3JlY29ubmVjdC5hcHBsZS5jb20vdjEvY2lQcm9kdWN0cz9maWx0ZXJbYXBwXT02NzgwNjk0NTQ4IiwgaGVhZGVycz1IKQpwcmludChmIkNJIFByb2R1Y3RzICh7cjIuc3RhdHVzX2NvZGV9KToiLCBqc29uLmR1bXBzKHIyLmpzb24oKSwgaW5kZW50PTIpWzozMDAwXSkK' | base64 --decode > /tmp/asc_check.py
         python3 /tmp/asc_check.py
-    - name: Write ASC check script
-      run: |
-        cat > /tmp/asc_check.py << 'PYEOF'
-import jwt, time, requests, json, os
-KEY_ID = os.environ["KEY_ID"]
-ISSUER = os.environ["ISSUER"]
-with open("/tmp/asc_key.p8") as f:
-    key_content = f.read()
-payload = {"iss": ISSUER, "iat": int(time.time()), "exp": int(time.time()) + 1200, "aud": "appstoreconnect-v1"}
-token = jwt.encode(payload, key_content, algorithm="ES256", headers={"kid": KEY_ID})
-H = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-r = requests.get("https://api.appstoreconnect.apple.com/v1/scmProviders", headers=H)
-print(f"SCM Providers ({r.status_code}):", json.dumps(r.json(), indent=2)[:3000])
-r2 = requests.get("https://api.appstoreconnect.apple.com/v1/ciProducts?filter[app]=6780694548", headers=H)
-print(f"CI Products ({r2.status_code}):", json.dumps(r2.json(), indent=2)[:3000])
-PYEOF
