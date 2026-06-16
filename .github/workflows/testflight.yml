@@ -64,49 +64,57 @@ jobs:
         cp -r "$APP" /tmp/Payload/TyFiWatch.app
         cd /tmp && zip -qr TyFiWatch.ipa Payload/
         echo "IPA: $(du -sh /tmp/TyFiWatch.ipa)"
-    - name: Find transport tools
-      run: |
-        echo "=== iTMSTransporter locations ==="
-        find /Applications/Xcode*.app -name "iTMSTransporter" 2>/dev/null || echo "not in Xcode"
-        ls /usr/bin/iTMSTransporter 2>/dev/null || echo "not in /usr/bin"
-        find /usr/local -name "iTMSTransporter" 2>/dev/null || echo "not in /usr/local"
-        echo "=== Transporter.app ==="
-        ls /Applications/Transporter.app 2>/dev/null || echo "not installed"
-        echo "=== altool location ==="
-        xcrun -f altool 2>/dev/null || echo "altool not found via xcrun"
-        echo "=== altool upload-app help ==="
-        xcrun altool --help 2>&1 | grep -A5 "upload-app" || true
-    - name: Create ITMSP and upload via altool upload-app with ios type
+    - name: Try altool --upload-app -t iphoneos with IPA
       env:
         KEY_ID: ${{ secrets.ASC_KEY_ID }}
         ISSUER: ${{ secrets.ASC_ISSUER_ID }}
       run: |
-        # Compute IPA md5 and size for ITMSP metadata
-        IPA_MD5=$(md5 -q /tmp/TyFiWatch.ipa)
-        IPA_SIZE=$(stat -f%z /tmp/TyFiWatch.ipa)
-        echo "IPA md5=$IPA_MD5 size=$IPA_SIZE"
-        # Create ITMSP package
-        mkdir -p /tmp/TyFiWatch.itmsp
-        cp /tmp/TyFiWatch.ipa /tmp/TyFiWatch.itmsp/
-        cat > /tmp/TyFiWatch.itmsp/metadata.xml << XMLEOF
-        <?xml version="1.0" encoding="UTF-8"?>
-        <package version="software5.8" xmlns="http://apple.com/itunes/importer">
-          <software_assets apple_id="6780694548" bundle_short_version_string="1.0" bundle_version="1">
-            <asset type="bundle">
-              <data_file>
-                <file_name>TyFiWatch.ipa</file_name>
-                <checksum type="md5">${IPA_MD5}</checksum>
-                <size>${IPA_SIZE}</size>
-              </data_file>
-            </asset>
-          </software_assets>
-        </package>
-        XMLEOF
-        cat /tmp/TyFiWatch.itmsp/metadata.xml
-        echo "=== Trying --upload-app with ITMSP and -t iphoneos ==="
+        echo "=== altool --upload-app -t iphoneos with IPA ==="
         xcrun altool --upload-app \
-          -f /tmp/TyFiWatch.itmsp \
+          -f /tmp/TyFiWatch.ipa \
           -t iphoneos \
           --apiKey "$KEY_ID" \
-          --apiIssuer "$ISSUER" \
-          --verbose 2>&1 | tail -40
+          --apiIssuer "$ISSUER" 2>&1 || true
+    - name: Try iTMSTransporter from Xcode 16.4
+      env:
+        KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        KEY_B64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+      run: |
+        ITMST="/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/iTMSTransporter"
+        echo "=== iTMSTransporter version ==="
+        "$ITMST" -version 2>&1 || true
+        echo "=== iTMSTransporter help flags ==="
+        "$ITMST" -help 2>&1 | head -60 || true
+        # Create ITMSP package
+        IPA_MD5=$(md5 -q /tmp/TyFiWatch.ipa)
+        IPA_SIZE=$(stat -f%z /tmp/TyFiWatch.ipa)
+        mkdir -p /tmp/TyFiWatch.itmsp
+        cp /tmp/TyFiWatch.ipa /tmp/TyFiWatch.itmsp/
+        python3 -c "
+import os
+md5 = os.environ['IPA_MD5']
+size = os.environ['IPA_SIZE']
+xml = '''<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<package version=\"software5.8\" xmlns=\"http://apple.com/itunes/importer\">
+  <software_assets apple_id=\"6780694548\" bundle_short_version_string=\"1.0\" bundle_version=\"1\">
+    <asset type=\"bundle\">
+      <data_file>
+        <file_name>TyFiWatch.ipa</file_name>
+        <checksum type=\"md5\">' + md5 + '</checksum>
+        <size>' + size + '</size>
+      </data_file>
+    </asset>
+  </software_assets>
+</package>'''
+open('/tmp/TyFiWatch.itmsp/metadata.xml','w').write(xml)
+print('metadata.xml written')
+" IPA_MD5="$IPA_MD5" IPA_SIZE="$IPA_SIZE"
+        echo "=== Uploading via iTMSTransporter ==="
+        KEY_PATH="$HOME/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8"
+        "$ITMST" -m upload \
+          -f /tmp/TyFiWatch.itmsp \
+          -apiKey "$KEY_ID" \
+          -apiIssuer "$ISSUER" \
+          -apiPrivateKey "$KEY_PATH" \
+          -v eXtreme 2>&1 | tail -60 || true
