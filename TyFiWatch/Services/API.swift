@@ -57,6 +57,11 @@ actor API {
     private func send<T: Decodable>(_ req: URLRequest, as _: T.Type) async throws -> T {
         let (data, resp) = try await session.data(for: req)
         guard let http = resp as? HTTPURLResponse else { throw APIError.http(-1) }
+        // §4.3 — 401 clears the stored token and posts a re-pair notification.
+        if http.statusCode == 401 {
+            await WatchAuth.shared.clear()
+            NotificationCenter.default.post(name: Notification.Name("watchAuthExpired"), object: nil)
+        }
         guard (200..<300).contains(http.statusCode) else { throw APIError.http(http.statusCode) }
         let env = try JSONDecoder().decode(Envelope<T>.self, from: data)
         guard env.ok, let payload = env.data else { throw APIError.envelope(env.error ?? "unknown") }
