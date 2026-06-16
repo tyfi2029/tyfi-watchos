@@ -3,11 +3,22 @@ on:
   workflow_dispatch:
 jobs:
   build:
-    runs-on: macos-16
+    runs-on: macos-15
     timeout-minutes: 120
     steps:
     - uses: actions/checkout@v4
-    - name: Install xcodegen
+    - name: Select Xcode 26
+      run: |
+        XCODE26=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1 || true)
+        if [ -n "$XCODE26" ]; then
+          sudo xcode-select -s "$XCODE26/Contents/Developer"
+          echo "Selected: $XCODE26"
+        else
+          echo "Xcode 26 not found, using default"
+          xcode-select -p
+        fi
+        xcodebuild -version
+        - name: Install xcodegen
       run: brew install xcodegen
     - name: Build archive and upload to TestFlight
       env:
