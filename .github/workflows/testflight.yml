@@ -1,23 +1,17 @@
 name: Build & Upload to TestFlight
-
 on:
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: macos-15
-
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-
     - name: Select Xcode 26
       run: |
         XCODE=$(ls /Applications/ | grep -E "^Xcode" | sort -rV | head -1)
-        echo "Using: $XCODE"
         sudo xcode-select -s "/Applications/$XCODE/Contents/Developer"
         xcodebuild -version
-
     - name: Set up keychain
       env:
         P12_B64: ${{ secrets.DIST_P12_BASE64 }}
@@ -32,7 +26,6 @@ jobs:
         security import /tmp/dist.p12 -k ci.keychain -P "$P12_PASS" -T /usr/bin/codesign
         security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "ci" ci.keychain
         security find-identity -v -p codesigning ci.keychain
-
     - name: Install provisioning profiles
       env:
         PROFILE_MAIN: ${{ secrets.PROFILE_MAIN_BASE64 }}
@@ -41,7 +34,6 @@ jobs:
         mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
         echo "$PROFILE_MAIN" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/tyfiwatch_main.mobileprovision
         echo "$PROFILE_COMPL" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/tyfiwatch_complications.mobileprovision
-
     - name: Set up ASC API key
       env:
         KEY_B64: ${{ secrets.ASC_KEY_P8_BASE64 }}
@@ -49,16 +41,13 @@ jobs:
       run: |
         mkdir -p ~/.appstoreconnect/private_keys
         echo "$KEY_B64" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8
-
     - name: Install xcodegen
       run: |
         curl -sL https://github.com/yonaskolb/XcodeGen/releases/download/2.42.0/xcodegen.zip -o /tmp/xg.zip
         unzip -q /tmp/xg.zip -d /tmp
         chmod +x /tmp/xcodegen/bin/xcodegen
-
     - name: Generate Xcode project
       run: /tmp/xcodegen/bin/xcodegen generate --spec project.yml --project .
-
     - name: Archive
       run: |
         xcodebuild archive \
@@ -69,23 +58,52 @@ jobs:
           DEVELOPMENT_TEAM=E5HE9TGHFQ \
           OTHER_CODE_SIGN_FLAGS="--keychain ci.keychain" \
           2>&1 | grep -E "error:|ARCHIVE SUCCEEDED|Signing|CodeSign"
-
-    - name: Create IPA
+    - name: Export for TestFlight (release-testing)
       run: |
-        APP=$(find /tmp/TyFiWatch.xcarchive/Products -name "*.app" | head -1)
-        echo "Packaging: $APP"
-        mkdir -p /tmp/Payload
-        cp -r "$APP" /tmp/Payload/TyFiWatch.app
-        cd /tmp && zip -qr TyFiWatch.ipa Payload/
-        echo "IPA size: $(du -sh /tmp/TyFiWatch.ipa)"
-
+        cat > /tmp/export.plist << 'PLIST'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>method</key>
+            <string>release-testing</string>
+            <key>teamID</key>
+            <string>E5HE9TGHFQ</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+                <key>fyi.tyfi.watch.watchkitapp</key>
+                <string>TyFiWatch AppStore CI</string>
+                <key>fyi.tyfi.watch.complications</key>
+                <string>TyFiWatch Complications AppStore CI</string>
+            </dict>
+        </dict>
+        </plist>
+        PLIST
+        mkdir -p /tmp/export
+        xcodebuild -exportArchive \
+          -archivePath /tmp/TyFiWatch.xcarchive \
+          -exportPath /tmp/export \
+          -exportOptionsPlist /tmp/export.plist \
+          OTHER_CODE_SIGN_FLAGS="--keychain ci.keychain" 2>&1
+    - name: Inspect export
+      run: |
+        echo "=== Export dir ==="
+        ls -la /tmp/export/
+        IPA=$(find /tmp/export -name "*.ipa" | head -1)
+        echo "IPA: $IPA"
+        if [ -n "$IPA" ]; then
+          unzip -l "$IPA" | head -30
+          cp "$IPA" /tmp/TyFiWatch.ipa
+        fi
     - name: Upload to TestFlight
       env:
         KEY_ID: ${{ secrets.ASC_KEY_ID }}
         ISSUER: ${{ secrets.ASC_ISSUER_ID }}
       run: |
         xcrun altool --upload-package /tmp/TyFiWatch.ipa \
-          --type ios \
+          --type watchos \
           --asc-public-id "$ISSUER" \
           --apple-id 6780694548 \
           --bundle-version 1 \
