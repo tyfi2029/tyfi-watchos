@@ -25,7 +25,6 @@ jobs:
         security set-keychain-settings -t 7200 ci.keychain
         security import /tmp/dist.p12 -k ci.keychain -P "$P12_PASS" -T /usr/bin/codesign
         security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "ci" ci.keychain
-        security find-identity -v -p codesigning ci.keychain
     - name: Install provisioning profiles
       env:
         PROFILE_MAIN: ${{ secrets.PROFILE_MAIN_BASE64 }}
@@ -58,56 +57,21 @@ jobs:
           DEVELOPMENT_TEAM=E5HE9TGHFQ \
           OTHER_CODE_SIGN_FLAGS="--keychain ci.keychain" \
           2>&1 | grep -E "error:|ARCHIVE SUCCEEDED|Signing|CodeSign"
-    - name: Export for TestFlight (release-testing)
+    - name: Create IPA
       run: |
-        cat > /tmp/export.plist << 'PLIST'
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
-        <dict>
-            <key>method</key>
-            <string>release-testing</string>
-            <key>teamID</key>
-            <string>E5HE9TGHFQ</string>
-            <key>signingStyle</key>
-            <string>manual</string>
-            <key>provisioningProfiles</key>
-            <dict>
-                <key>fyi.tyfi.watch.watchkitapp</key>
-                <string>TyFiWatch AppStore CI</string>
-                <key>fyi.tyfi.watch.complications</key>
-                <string>TyFiWatch Complications AppStore CI</string>
-            </dict>
-        </dict>
-        </plist>
-        PLIST
-        mkdir -p /tmp/export
-        xcodebuild -exportArchive \
-          -archivePath /tmp/TyFiWatch.xcarchive \
-          -exportPath /tmp/export \
-          -exportOptionsPlist /tmp/export.plist \
-          OTHER_CODE_SIGN_FLAGS="--keychain ci.keychain" 2>&1
-    - name: Inspect export
-      run: |
-        echo "=== Export dir ==="
-        ls -la /tmp/export/
-        IPA=$(find /tmp/export -name "*.ipa" | head -1)
-        echo "IPA: $IPA"
-        if [ -n "$IPA" ]; then
-          unzip -l "$IPA" | head -30
-          cp "$IPA" /tmp/TyFiWatch.ipa
-        fi
-    - name: Upload to TestFlight
+        APP=$(find /tmp/TyFiWatch.xcarchive/Products -name "*.app" | head -1)
+        mkdir -p /tmp/Payload
+        cp -r "$APP" /tmp/Payload/TyFiWatch.app
+        cd /tmp && zip -qr TyFiWatch.ipa Payload/
+        echo "IPA: $(du -sh /tmp/TyFiWatch.ipa)"
+    - name: Upload via altool --upload-app -t watchos (ITMS legacy)
       env:
         KEY_ID: ${{ secrets.ASC_KEY_ID }}
         ISSUER: ${{ secrets.ASC_ISSUER_ID }}
       run: |
-        xcrun altool --upload-package /tmp/TyFiWatch.ipa \
-          --type watchos \
-          --asc-public-id "$ISSUER" \
-          --apple-id 6780694548 \
-          --bundle-version 1 \
-          --bundle-short-version-string 1.0 \
-          --bundle-id fyi.tyfi.watch.watchkitapp \
+        xcrun altool --upload-app \
+          -f /tmp/TyFiWatch.ipa \
+          -t watchos \
           --apiKey "$KEY_ID" \
-          --apiIssuer "$ISSUER" 2>&1
+          --apiIssuer "$ISSUER" \
+          --verbose 2>&1
