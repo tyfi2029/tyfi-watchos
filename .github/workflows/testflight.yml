@@ -55,10 +55,11 @@ jobs:
     - name: Install xcodegen
       run: |
         curl -sL https://github.com/yonaskolb/XcodeGen/releases/download/2.42.0/xcodegen.zip -o /tmp/xg.zip
-        unzip -q /tmp/xg.zip -d /tmp/xg
+        unzip -q /tmp/xg.zip -d /tmp
+        chmod +x /tmp/xcodegen/bin/xcodegen
 
     - name: Generate Xcode project
-      run: /tmp/xg/bin/xcodegen generate --spec project.yml --project .
+      run: /tmp/xcodegen/bin/xcodegen generate --spec project.yml --project .
 
     - name: Archive
       run: |
@@ -69,7 +70,7 @@ jobs:
           -archivePath /tmp/TyFiWatch.xcarchive \
           DEVELOPMENT_TEAM=E5HE9TGHFQ \
           OTHER_CODE_SIGN_FLAGS="--keychain ci.keychain" \
-          2>&1 | tail -5
+          2>&1 | tail -20
 
     - name: Verify archive signed with Distribution cert
       run: codesign -dvvv /tmp/TyFiWatch.xcarchive/Products/Applications/TyFiWatch.app 2>&1 | grep Authority
