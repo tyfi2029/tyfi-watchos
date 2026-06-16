@@ -18,7 +18,7 @@ jobs:
           xcode-select -p
         fi
         xcodebuild -version
-        - name: Install xcodegen
+    - name: Install xcodegen
       run: brew install xcodegen
     - name: Build archive and upload to TestFlight
       env:
