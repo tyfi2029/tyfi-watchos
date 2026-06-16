@@ -96,7 +96,7 @@ jobs:
         ISSUER: ${{ secrets.ASC_ISSUER_ID }}
       run: |
         xcrun altool --upload-app -f /tmp/TyFiWatch.ipa \
-          --type watchos \
+          --platform watchos \
           --apiKey "$KEY_ID" \
           --apiIssuer "$ISSUER" \
           --verbose 2>&1
