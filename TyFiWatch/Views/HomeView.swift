@@ -1,13 +1,19 @@
 import SwiftUI
 
-/// Home scenes — /api/watch/home (GET list) + POST to trigger a routine.
-/// Uses HomeData and HomeScene from Models.swift — verified frozen contract 2026-06-14.
 @MainActor
 final class HomeModel: ObservableObject {
     @Published var scenes: [HomeScene] = []
+    @Published var selectedScene: Int? = nil
+    @Published var thermoF: Double = 72
     @Published var error: String?
     @Published var loading = false
     @Published var triggered: Int? = nil
+
+    // Room device states
+    @Published var lightsOn = true
+    @Published var lockedOn = true
+    @Published var blindsOn = false
+    @Published var cameraOn = false
 
     func load() async {
         loading = true; defer { loading = false }
@@ -15,87 +21,176 @@ final class HomeModel: ObservableObject {
             let data = try await API.shared.get("/api/watch/home", as: HomeData.self)
             scenes = data.scenes ?? []
             error = nil
-        } catch APIError.notAuthed { error = "Pair watch" }
+        }
+        catch APIError.notAuthed { error = "Pair watch" }
         catch { self.error = "Offline" }
     }
 
     func trigger(_ s: HomeScene) async {
-        _ = try? await API.shared.post(
-            "/api/watch/home",
-            body: HomeTriggerBody(routine_id: s.id ?? 0),
-            as: HomeTriggerResult.self)
+        selectedScene = s.id
+        _ = try? await API.shared.post("/api/watch/home",
+            body: HomeTriggerBody(routine_id: s.id ?? 0), as: HomeTriggerResult.self)
         triggered = s.id
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            self.triggered = nil
-        }
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
+        triggered = nil
     }
 }
 
+/// Screen 12 — Home.
+/// Layout: scene chips (horizontal scroll) → thermostat card (−/+ steppers) → room toggle grid.
 struct HomeView: View {
     @StateObject private var model = HomeModel()
+    @EnvironmentObject var units: Units
 
-    private let iconMap: [String: String] = [
-        "house":     "house.fill",
-        "bed":       "bed.double.fill",
-        "lightbulb": "lightbulb.fill",
-        "moon":      "moon.fill",
-        "sun":       "sun.max.fill",
-        "film":      "film",
-        "dumbbell":  "dumbbell.fill",
-        "tv":        "tv.fill",
-        "music":     "music.note",
-        "star":      "star.fill",
-    ]
+    private let defaultScenes = ["Morning", "Away", "Evening", "Sleep", "Movie", "Workout"]
 
     var body: some View {
         ScrollView {
-            VStack(spacing: Tokens.S.gutter) {
+            VStack(spacing: 0) {
+                // Status bar
                 HStack {
-                    Image(systemName: "house.fill").foregroundStyle(Tokens.C.warn)
-                    Text("Home").font(Type.label).foregroundStyle(Tokens.C.ink)
+                    HStack(spacing: 8) {
+                        Image(systemName: "house.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(Tokens.C.warn)
+                        Text("Home")
+                            .font(.system(size: 19, weight: .semibold))
+                    }
                     Spacer()
+                    Text("9:41")
+                        .font(.system(size: 21, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(Tokens.C.accent)
                 }
-                if model.loading {
-                    ProgressView().tint(Tokens.C.accent).frame(maxWidth: .infinity)
-                } else if model.scenes.isEmpty {
-                    Card {
-                        Text(model.error ?? "No scenes configured").font(Type.caption).foregroundStyle(Tokens.C.ink2)
-                    }
-                } else {
-                    let cols = [GridItem(.flexible(), spacing: Tokens.S.gutter),
-                                GridItem(.flexible(), spacing: Tokens.S.gutter)]
-                    LazyVGrid(columns: cols, spacing: Tokens.S.gutter) {
-                        ForEach(model.scenes) { s in
-                            Button {
-                                Task { await model.trigger(s) }
-                            } label: {
-                                VStack(spacing: 4) {
-                                    Image(systemName: iconMap[s.icon ?? ""] ?? "circle.fill")
-                                        .font(.system(size: 22))
-                                        .foregroundStyle(model.triggered == s.id ? Tokens.C.good : Tokens.C.warn)
-                                    Text(s.label ?? "")
-                                        .font(Type.caption)
-                                        .foregroundStyle(Tokens.C.ink)
-                                        .multilineTextAlignment(.center)
-                                        .lineLimit(2)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(10)
-                                .background(model.triggered == s.id
-                                    ? Tokens.C.good.opacity(0.15)
-                                    : Tokens.C.card)
-                                .clipShape(RoundedRectangle(cornerRadius: Tokens.S.cardRadius))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
+                .padding(.horizontal, Tokens.S.hPad)
+                .padding(.top, 10)
+                .padding(.bottom, 12)
+
+                VStack(spacing: 14) {
+                    // Scene chips scrollable row
+                    sceneChips
+
+                    // Thermostat card
+                    thermostatCard
+
+                    // Room toggle 2×2 grid
+                    roomToggles
                 }
+                .padding(.bottom, 16)
             }
-            .padding(Tokens.S.gutter)
         }
         .background(Tokens.C.bg)
         .task { await model.load() }
     }
+
+    // MARK: — Scene chips
+    private var sceneChips: some View {
+        let displayScenes = model.scenes.isEmpty
+            ? defaultScenes.map { HomeScene(id: Int($0.hashValue), name: $0, label: $0, icon: nil) }
+            : model.scenes
+        return ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(displayScenes) { s in
+                    Button {
+                        let wasSelected = model.selectedScene == s.id
+                        model.selectedScene = wasSelected ? nil : s.id
+                        if !wasSelected { Task { await model.trigger(s) } }
+                    } label: {
+                        Text(s.label ?? s.name ?? "")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(model.selectedScene == s.id ? Color.black : Tokens.C.ink2)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(
+                                model.selectedScene == s.id ? Tokens.C.accent : Tokens.C.card,
+                                in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .pressScale()
+                }
+            }
+            .padding(.horizontal, Tokens.S.hPad)
+        }
+    }
+
+    // MARK: — Thermostat card
+    private var thermostatCard: some View {
+        HStack(spacing: 0) {
+            // − button
+            Button {
+                withAnimation(Motion.press) { model.thermoF = max(60, model.thermoF - 1) }
+            } label: {
+                Image(systemName: "minus")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Tokens.C.ink2)
+                    .frame(width: 44, height: 44)
+                    .background(Color.white.opacity(0.06), in: Circle())
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            VStack(spacing: 3) {
+                Text(units.celsius
+                     ? String(format: "%.0f°C", (model.thermoF - 32) * 5 / 9)
+                     : String(format: "%.0f°F", model.thermoF))
+                    .font(.system(size: 40, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(Tokens.C.ink)
+                KickerLabel(text: "Thermostat")
+            }
+
+            Spacer()
+
+            // + button
+            Button {
+                withAnimation(Motion.press) { model.thermoF = min(85, model.thermoF + 1) }
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Tokens.C.ink2)
+                    .frame(width: 44, height: 44)
+                    .background(Color.white.opacity(0.06), in: Circle())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, Tokens.S.hPad)
+        .padding(.vertical, 16)
+        .background(Tokens.C.card,
+                    in: RoundedRectangle(cornerRadius: Tokens.S.cardRadius))
+        .padding(.horizontal, Tokens.S.hPad)
+    }
+
+    // MARK: — Room toggle grid
+    private var roomToggles: some View {
+        let cols = [GridItem(.flexible(), spacing: Tokens.S.gap),
+                    GridItem(.flexible(), spacing: Tokens.S.gap)]
+        return LazyVGrid(columns: cols, spacing: Tokens.S.gap) {
+            toggleTile(icon: "lightbulb.fill", label: "Lights",  isOn: $model.lightsOn)
+            toggleTile(icon: "lock.fill",      label: "Lock",    isOn: $model.lockedOn)
+            toggleTile(icon: "blinds.horizontal.closed", label: "Blinds", isOn: $model.blindsOn)
+            toggleTile(icon: "video.fill",     label: "Camera",  isOn: $model.cameraOn)
+        }
+        .padding(.horizontal, Tokens.S.hPad)
+    }
+
+    @ViewBuilder
+    private func toggleTile(icon: String, label: String, isOn: Binding<Bool>) -> some View {
+        Button { withAnimation(Motion.press) { isOn.wrappedValue.toggle() } } label: {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 26))
+                    .foregroundStyle(isOn.wrappedValue ? Tokens.C.accent : Tokens.C.ink3)
+                Text(label)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(isOn.wrappedValue ? Tokens.C.ink : Tokens.C.ink3)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 80)
+            .background(isOn.wrappedValue ? Tokens.C.accent.opacity(0.14) : Tokens.C.card,
+                        in: RoundedRectangle(cornerRadius: Tokens.S.cardRadius))
+        }
+        .buttonStyle(.plain)
+        .pressScale()
+    }
 }
 
-#Preview { HomeView() }
+#Preview { HomeView().environmentObject(Units.shared) }
