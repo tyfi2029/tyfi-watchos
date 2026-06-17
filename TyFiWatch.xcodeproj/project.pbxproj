@@ -43,6 +43,7 @@
 		9ECFE61C7009CCA75AB5255D /* hydration_today.json in Resources */ = {isa = PBXBuildFile; fileRef = 84D6F42AB79B906ADCE1F16D /* hydration_today.json */; };
 		A2946171E5715BB127BE4F04 /* TyFiComplicationsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13CC2B86F4F303B4654B0304 /* TyFiComplicationsBundle.swift */; };
 		A70AE599DFFB3663FB786BC3 /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B46AE33E4FEE2619DB021EEC /* HealthKitManager.swift */; };
+		A7CAB6C7E3A7F7E89DAB14D2 /* TyFiWatchComplications.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0B48A6D92735570864BB2C48 /* TyFiWatchComplications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A8B27BE0BD07DD77868D8EB2 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = A16CBCBA8848C389DAA22113 /* Typography.swift */; };
 		A8EC921471E80BB7DC7F882E /* Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ED1AEC452A052EDC74B4207 /* Tokens.swift */; };
 		A9F54A874CD2CE7113A378A7 /* WatchAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5643B66C10DC42D7A0E1C5EF /* WatchAuth.swift */; };
@@ -69,14 +70,28 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		EC6E54ADBF4E5D18684959C2 /* PBXContainerItemProxy */ = {
+		2ECBB28EAF88130A82498979 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = C990AFB6D0C9993FFEDBEBF5 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 62F25BB51F29F66326FC7EE1;
-			remoteInfo = TyFiWatch;
+			remoteGlobalIDString = B8AA6D9AE911916EAB63EC9A;
+			remoteInfo = TyFiWatchComplications;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		43DDA6287DB06DCC9499CE6A /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A7CAB6C7E3A7F7E89DAB14D2 /* TyFiWatchComplications.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		02426EE8F6C5213639CA44C9 /* home.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = home.json; sourceTree = "<group>"; };
@@ -291,10 +306,12 @@
 			buildPhases = (
 				C24452773017527E9A91D74E /* Sources */,
 				91E2215E14D1E27F26E3E2B7 /* Resources */,
+				43DDA6287DB06DCC9499CE6A /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				4C74A8883586B7B286D2E0C0 /* PBXTargetDependency */,
 			);
 			name = TyFiWatch;
 			packageProductDependencies = (
@@ -330,7 +347,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				94E3C300EDFC7996E3FB8261 /* PBXTargetDependency */,
 			);
 			name = TyFiWatchComplications;
 			packageProductDependencies = (
@@ -484,10 +500,10 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		94E3C300EDFC7996E3FB8261 /* PBXTargetDependency */ = {
+		4C74A8883586B7B286D2E0C0 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 62F25BB51F29F66326FC7EE1 /* TyFiWatch */;
-			targetProxy = EC6E54ADBF4E5D18684959C2 /* PBXContainerItemProxy */;
+			target = B8AA6D9AE911916EAB63EC9A /* TyFiWatchComplications */;
+			targetProxy = 2ECBB28EAF88130A82498979 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 

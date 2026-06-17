@@ -15,6 +15,9 @@ targets:
     type: application
     platform: watchOS
     deploymentTarget: "11.5"
+    dependencies:
+      - target: TyFiWatchComplications
+        embed: true
     sources:
       - path: TyFiWatch
     info:
@@ -59,8 +62,6 @@ targets:
         CODE_SIGN_STYLE: Manual
         CODE_SIGN_IDENTITY: "Apple Distribution"
         PROVISIONING_PROFILE_SPECIFIER: "TyFiWatch Complications WatchOS AppStore"
-    dependencies:
-      - target: TyFiWatch
   TyFiWatchTests:
     # Host-less logic-test bundle: standalone watchOS apps cannot host unit tests
     # via `xcodebuild test` (install path misclassifies them as WatchKit 2.0 needing
