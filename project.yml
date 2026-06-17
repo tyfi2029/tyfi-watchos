@@ -61,7 +61,7 @@ targets:
           - $(AppIdentifierPrefix)fyi.tyfi.watch.shared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: fyi.tyfi.watch.complications
+        PRODUCT_BUNDLE_IDENTIFIER: fyi.tyfi.watch.watchkitapp.complications
         INFOPLIST_EXTENSION_POINT_IDENTIFIER: com.apple.widgetkit-extension
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: "5.0"
