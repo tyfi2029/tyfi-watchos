@@ -24,12 +24,14 @@
 		36398217BECAC111209E3DEE /* breath.json in Resources */ = {isa = PBXBuildFile; fileRef = E44C31B6B253FDDAD7177B30 /* breath.json */; };
 		45CAEFDAB33CF25E660D131C /* FlightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05292553CC5F688CEA26F8CF /* FlightView.swift */; };
 		55702C0C7AAAF3116A4209D6 /* TyFiWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ED32C555BE229B5C029A036 /* TyFiWatchApp.swift */; };
+		5B568A41E555C97EB6213917 /* API.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85899D17B09B0A2FFEF4FFA0 /* API.swift */; };
 		5BC1C995396F37092CB42928 /* Units.swift in Sources */ = {isa = PBXBuildFile; fileRef = 423C4EC71CED6C971085628D /* Units.swift */; };
 		5C4C2A9BE163E124077BDA9F /* WaterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9D226FC4B03601BA00BB45 /* WaterView.swift */; };
 		5D3642F142CE8FCAC14FD9DF /* CheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FE05B0F85371409D36E8142 /* CheckInView.swift */; };
 		65F5E5FDB5D54EB5ED8D8DFA /* WatchAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5643B66C10DC42D7A0E1C5EF /* WatchAuth.swift */; };
 		6FE60C6FA9477BC1E8F0B90B /* SessionTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ACC0470E951B1552934B4D2 /* SessionTimerView.swift */; };
 		7C04C08B40DDF83F34227438 /* NutritionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71E51D26997ED3F90525E8D8 /* NutritionView.swift */; };
+		7FFF639D2398129E5BC6BB41 /* PostContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E42FE03D833475170F2D38EC /* PostContractTests.swift */; };
 		80AF093BDDE0DF87218DE126 /* Zone2View.swift in Sources */ = {isa = PBXBuildFile; fileRef = D25FCF2424FD07B3F9F59B78 /* Zone2View.swift */; };
 		84ECC5C79F420CED1746569A /* WindDownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A25489A2E35C53D688CF25 /* WindDownView.swift */; };
 		8CBEF38BB8A819C5EACA3E44 /* TrendsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BEFC0662857460EF1449FA /* TrendsView.swift */; };
@@ -42,6 +44,7 @@
 		A70AE599DFFB3663FB786BC3 /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B46AE33E4FEE2619DB021EEC /* HealthKitManager.swift */; };
 		A8B27BE0BD07DD77868D8EB2 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = A16CBCBA8848C389DAA22113 /* Typography.swift */; };
 		A8EC921471E80BB7DC7F882E /* Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ED1AEC452A052EDC74B4207 /* Tokens.swift */; };
+		A9F54A874CD2CE7113A378A7 /* WatchAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5643B66C10DC42D7A0E1C5EF /* WatchAuth.swift */; };
 		B636D436A194BAE9D0FFBC00 /* BreathworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD6A2F807FB8D8E3DB688FF9 /* BreathworkView.swift */; };
 		BFDEC518FC64159039B724E6 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4D633B42F756607DCF79DAA /* Components.swift */; };
 		C2B9B421914100199D3C1617 /* sleep.json in Resources */ = {isa = PBXBuildFile; fileRef = EA1EA92ACB98382D95E60C9E /* sleep.json */; };
@@ -50,6 +53,7 @@
 		C873EB3501E7D2ABD1E327AE /* venue_nearby.json in Resources */ = {isa = PBXBuildFile; fileRef = 2E78F78F663E1BC9390A6557 /* venue_nearby.json */; };
 		CAFB8E70CA0314E8F02DB317 /* EnvironmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CD76A2526684B2EA031BBAB /* EnvironmentView.swift */; };
 		CD3E0233875A242F415E4728 /* nutrition.json in Resources */ = {isa = PBXBuildFile; fileRef = AD0D0B66554C6DBCA9ADAAC5 /* nutrition.json */; };
+		D3E1E8045136002A8726F483 /* MockURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6645418A473D9E037B48EAC /* MockURLProtocol.swift */; };
 		DCAD7E2C8A4623DB4126F83C /* ReadinessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA64710B549D932DC1594F9 /* ReadinessView.swift */; };
 		E75C1BCEF42E2CFE43E6E5B9 /* snapshot.json in Resources */ = {isa = PBXBuildFile; fileRef = A139CC8DD23EB3660027F6FE /* snapshot.json */; };
 		EA0608A4A5B1C84A20BA52EF /* session.json in Resources */ = {isa = PBXBuildFile; fileRef = FFAB23A80445752E04486FF9 /* session.json */; };
@@ -112,6 +116,7 @@
 		C1BC004A9E92EA3852AA0BCB /* ProtocolView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolView.swift; sourceTree = "<group>"; };
 		C4D633B42F756607DCF79DAA /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		C5BC41E8566E037C4A994FCD /* SleepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepView.swift; sourceTree = "<group>"; };
+		C6645418A473D9E037B48EAC /* MockURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockURLProtocol.swift; sourceTree = "<group>"; };
 		CCA64710B549D932DC1594F9 /* ReadinessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessView.swift; sourceTree = "<group>"; };
 		D081C2DFA77D60F654B0E8D9 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		D25FCF2424FD07B3F9F59B78 /* Zone2View.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zone2View.swift; sourceTree = "<group>"; };
@@ -119,6 +124,7 @@
 		DD6A2F807FB8D8E3DB688FF9 /* BreathworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreathworkView.swift; sourceTree = "<group>"; };
 		DF69F6E9DE08A0E2C4279304 /* flight.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = flight.json; sourceTree = "<group>"; };
 		E2A9019C7BA87587ECEE961B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		E42FE03D833475170F2D38EC /* PostContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostContractTests.swift; sourceTree = "<group>"; };
 		E44C31B6B253FDDAD7177B30 /* breath.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = breath.json; sourceTree = "<group>"; };
 		EA0B5372516D38531B7828C3 /* NowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowView.swift; sourceTree = "<group>"; };
 		EA1EA92ACB98382D95E60C9E /* sleep.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = sleep.json; sourceTree = "<group>"; };
@@ -153,6 +159,8 @@
 			isa = PBXGroup;
 			children = (
 				BE44F7D6A591791DF8239933 /* FixtureDecodeTests.swift */,
+				C6645418A473D9E037B48EAC /* MockURLProtocol.swift */,
+				E42FE03D833475170F2D38EC /* PostContractTests.swift */,
 				A2CBBF14B4D75C87105B7798 /* Fixtures */,
 			);
 			path = TyFiWatchTests;
@@ -406,8 +414,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5B568A41E555C97EB6213917 /* API.swift in Sources */,
 				FAC66EAC6F856E08B73D1B0E /* FixtureDecodeTests.swift in Sources */,
+				D3E1E8045136002A8726F483 /* MockURLProtocol.swift in Sources */,
 				192D4910C39CA3E779CE5B67 /* Models.swift in Sources */,
+				7FFF639D2398129E5BC6BB41 /* PostContractTests.swift in Sources */,
+				A9F54A874CD2CE7113A378A7 /* WatchAuth.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

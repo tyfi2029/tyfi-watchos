@@ -18,7 +18,13 @@ struct Envelope<T: Decodable>: Decodable {
 actor API {
     static let shared = API()
     private let base = URL(string: "https://life.tyfi.fyi")!
-    private let session = URLSession(configuration: .default)
+    private let session: URLSession
+
+    /// Default uses the standard session; tests inject a session whose configuration
+    /// carries `MockURLProtocol` so POST request bodies can be verified offline (§3).
+    init(session: URLSession = URLSession(configuration: .default)) {
+        self.session = session
+    }
 
     // MARK: Authenticated requests (require paired token)
 

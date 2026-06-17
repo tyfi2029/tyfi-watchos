@@ -72,6 +72,8 @@ targets:
     sources:
       - path: TyFiWatchTests
       - path: TyFiWatch/Models/Models.swift
+      - path: TyFiWatch/Services/API.swift
+      - path: TyFiWatch/Services/WatchAuth.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: fyi.tyfi.watch.tests
