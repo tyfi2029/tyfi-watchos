@@ -208,6 +208,7 @@ struct NowView: View {
                     .background(Tokens.C.accent, in: RoundedRectangle(cornerRadius: Tokens.S.pillRadius))
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Voice capture")
 
             // Thermal quick-log
             Button { } label: {
@@ -219,6 +220,7 @@ struct NowView: View {
                                 in: RoundedRectangle(cornerRadius: Tokens.S.pillRadius))
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Log thermal session")
         }
     }
 

@@ -187,6 +187,8 @@ struct LiveSensorsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Tokens.C.card,
                     in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(kicker), \(value) \(unit)")
     }
 }
 

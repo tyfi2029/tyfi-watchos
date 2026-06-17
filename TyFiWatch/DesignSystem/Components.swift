@@ -105,6 +105,8 @@ struct WMPTile: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(tint, in: RoundedRectangle(cornerRadius: Tokens.S.cardRadius, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(kicker), \(value)\(unit.map { " \($0)" } ?? "")")
     }
 }
 
@@ -134,6 +136,8 @@ struct StatTile: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Tokens.C.card,
                     in: RoundedRectangle(cornerRadius: Tokens.S.cardRadius, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label), \(value)\(unit.map { " \($0)" } ?? "")")
     }
 }
 
