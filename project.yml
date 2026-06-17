@@ -61,11 +61,35 @@ targets:
         PROVISIONING_PROFILE_SPECIFIER: "TyFiWatch Complications WatchOS AppStore"
     dependencies:
       - target: TyFiWatch
+  TyFiWatchTests:
+    # Host-less logic-test bundle: standalone watchOS apps cannot host unit tests
+    # via `xcodebuild test` (install path misclassifies them as WatchKit 2.0 needing
+    # a companion). We compile the model layer directly into the test bundle instead
+    # of @testable-importing the app, so no host install is required.
+    type: bundle.unit-test
+    platform: watchOS
+    deploymentTarget: "11.5"
+    sources:
+      - path: TyFiWatchTests
+      - path: TyFiWatch/Models/Models.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fyi.tyfi.watch.tests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "6.0"
+        DEVELOPMENT_TEAM: "E5HE9TGHFQ"
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "Apple Distribution"
+        PROVISIONING_PROFILE_SPECIFIER: "TyFiWatch WatchOS AppStore"
 schemes:
   TyFiWatch:
     build:
       targets:
         TyFiWatch: all
         TyFiWatchComplications: all
+    test:
+      config: Debug
+      targets:
+        - TyFiWatchTests
     run:
       config: Debug
