@@ -344,12 +344,6 @@ struct RecoveryView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(color)
-            } minimumValueLabel: {
-                Image(systemName: "heart.fill")
-                    .font(.system(size: 8))
-                    .foregroundStyle(color)
-            } maximumValueLabel: {
-                Text("")
             }
             .gaugeStyle(.accessoryCircular)
             .tint(color)
