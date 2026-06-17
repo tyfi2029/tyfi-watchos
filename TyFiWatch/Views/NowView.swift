@@ -6,14 +6,30 @@ final class NowModel: ObservableObject {
     @Published var error: String?
     @Published var loading = false
     @Published var waterBump = 0
+    /// Non-nil when `snapshot` is served from cache after a failed refresh.
+    @Published var staleSince: String?
 
     func load() async {
         loading = true; defer { loading = false }
         do {
-            snapshot = try await API.shared.get("/api/watch/snapshot", as: Snapshot.self)
+            let fresh = try await API.shared.get("/api/watch/snapshot", as: Snapshot.self)
+            snapshot = fresh
+            SnapshotCache.save(fresh)
+            staleSince = nil
             error = nil
-        } catch APIError.notAuthed { error = "Pair watch to sync" }
-        catch { self.error = "Offline" }
+        } catch APIError.notAuthed {
+            // 401 already cleared the token + posted re-pair; don't show stale cache.
+            error = "Pair watch to sync"
+        } catch {
+            // Offline/transient: fall back to last-good snapshot with a timestamp.
+            if let cached = SnapshotCache.load() {
+                snapshot = cached.snapshot
+                staleSince = SnapshotCache.staleLabel(for: cached.storedAt)
+                self.error = nil
+            } else {
+                self.error = "Offline"
+            }
+        }
     }
 
     func logWater(ml: Double) async {
@@ -50,6 +66,11 @@ struct NowView: View {
                 .padding(.bottom, 12)
 
                 VStack(alignment: .leading, spacing: 13) {
+                    // Stale-data banner when serving last-good snapshot offline
+                    if let since = model.staleSince {
+                        staleBanner(since)
+                    }
+
                     // Insight line
                     if let s = model.snapshot {
                         insightLine(s)
@@ -235,12 +256,46 @@ struct NowView: View {
         .background(Tokens.C.bg)
     }
 
+    // MARK: — Stale banner
+    @ViewBuilder private func staleBanner(_ since: String) -> some View {
+        HStack(spacing: 7) {
+            Image(systemName: "wifi.slash")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Tokens.C.warn)
+            Text("Offline · showing data from \(since)")
+                .font(.system(size: 11.5))
+                .foregroundStyle(Tokens.C.ink2)
+            Spacer()
+            Button { Task { await model.load() } } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Tokens.C.warn)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 11)
+        .padding(.vertical, 7)
+        .background(Tokens.C.warn.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+    }
+
     private var placeholderCard: some View {
         Card {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("No snapshot yet").font(Type.body_).foregroundStyle(Tokens.C.ink2)
-                Text("Pair this watch in TyFi to start syncing.")
+            VStack(alignment: .leading, spacing: 8) {
+                Text(model.error ?? "No snapshot yet")
+                    .font(Type.body_).foregroundStyle(Tokens.C.ink2)
+                Text(model.error == "Offline"
+                     ? "Couldn’t reach TyFi. Pull to retry."
+                     : "Pair this watch in TyFi to start syncing.")
                     .font(Type.caption).foregroundStyle(Tokens.C.ink3)
+                Button { Task { await model.load() } } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.clockwise").font(.system(size: 12, weight: .semibold))
+                        Text("Retry").font(.system(size: 13, weight: .semibold))
+                    }
+                    .foregroundStyle(Tokens.C.accent)
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 2)
             }
         }
     }

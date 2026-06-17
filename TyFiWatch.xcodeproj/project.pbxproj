@@ -65,6 +65,7 @@
 		F8A8ED5A0C6BDC877C17949A /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D081C2DFA77D60F654B0E8D9 /* RootView.swift */; };
 		FAC66EAC6F856E08B73D1B0E /* FixtureDecodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE44F7D6A591791DF8239933 /* FixtureDecodeTests.swift */; };
 		FAC77A6A675200BAF2CD50DF /* LiveSensorsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9CB7298A5B08EA18466689D /* LiveSensorsView.swift */; };
+		FADCFD4590970CA62F2964E9 /* SnapshotCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 484CD6DDE9B624371419C70B /* SnapshotCache.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -94,6 +95,7 @@
 		2E78F78F663E1BC9390A6557 /* venue_nearby.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = venue_nearby.json; sourceTree = "<group>"; };
 		367A3D634E545B8FAF4025E8 /* fasting.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = fasting.json; sourceTree = "<group>"; };
 		423C4EC71CED6C971085628D /* Units.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Units.swift; sourceTree = "<group>"; };
+		484CD6DDE9B624371419C70B /* SnapshotCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotCache.swift; sourceTree = "<group>"; };
 		4ACC0470E951B1552934B4D2 /* SessionTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionTimerView.swift; sourceTree = "<group>"; };
 		4D4EB8EE7F4CB651D6AF2857 /* VoiceNoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceNoteView.swift; sourceTree = "<group>"; };
 		4F2EE7E1D6EAEEEFB2A741F8 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
@@ -199,6 +201,7 @@
 			children = (
 				85899D17B09B0A2FFEF4FFA0 /* API.swift */,
 				B46AE33E4FEE2619DB021EEC /* HealthKitManager.swift */,
+				484CD6DDE9B624371419C70B /* SnapshotCache.swift */,
 				5643B66C10DC42D7A0E1C5EF /* WatchAuth.swift */,
 			);
 			path = Services;
@@ -464,6 +467,7 @@
 				F8A8ED5A0C6BDC877C17949A /* RootView.swift in Sources */,
 				6FE60C6FA9477BC1E8F0B90B /* SessionTimerView.swift in Sources */,
 				348D12784EA75EC3DAAFF8DC /* SleepView.swift in Sources */,
+				FADCFD4590970CA62F2964E9 /* SnapshotCache.swift in Sources */,
 				A8EC921471E80BB7DC7F882E /* Tokens.swift in Sources */,
 				8CBEF38BB8A819C5EACA3E44 /* TrendsView.swift in Sources */,
 				55702C0C7AAAF3116A4209D6 /* TyFiWatchApp.swift in Sources */,

@@ -4,7 +4,7 @@ import Foundation
 // All Sendable so they can cross the API actor boundary.
 
 // MARK: /api/watch/snapshot
-struct Snapshot: Decodable, Sendable {
+struct Snapshot: Codable, Sendable {
     let fetched_at: String?
     let cgm: CGM?
     let readiness: Readiness?
@@ -16,30 +16,30 @@ struct Snapshot: Decodable, Sendable {
     let last_thermal_session: ThermalSession?
     let steps: Int?
 
-    struct CGM: Decodable, Sendable {
+    struct CGM: Codable, Sendable {
         let glucose_mg_dl: Int?
         let trend: String?
         let fresh_seconds_ago: Int?
     }
-    struct Readiness: Decodable, Sendable {
+    struct Readiness: Codable, Sendable {
         let recovery: Int?
         let hrv: Int?
         let sleep: Int?
         let rhr: Int?
         let focus: String?
     }
-    struct DOLNext: Decodable, Sendable {
+    struct DOLNext: Codable, Sendable {
         let id: String?
         let title: String?
         let due_at: String?
     }
-    struct ProtocolProgress: Decodable, Sendable {
+    struct ProtocolProgress: Codable, Sendable {
         let done: Int?
         let total: Int?
         let current_segment: String?
         let next_segment_at: String?
     }
-    struct ThermalSession: Decodable, Sendable {
+    struct ThermalSession: Codable, Sendable {
         let mode: String?
         let completed_at: String?
         let duration_sec: Int?
@@ -48,7 +48,7 @@ struct Snapshot: Decodable, Sendable {
 }
 
 // MARK: /api/watch/hydration/today
-struct WaterToday: Decodable, Sendable {
+struct WaterToday: Codable, Sendable {
     let ml: Double?
     let goal_ml: Double?
     let pace_ml: Double?
