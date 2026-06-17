@@ -1,34 +1,27 @@
 import SwiftUI
 
-struct Zone2View: View {
-    struct TodayData: Decodable { let total_min: Int; let session_count: Int }
-    struct WeeklyData: Decodable {
-        let total_min: Int; let session_count: Int
-        let target_min: Int; let pct: Int
-        let last_session: String?
-    }
-    struct Session: Decodable {
-        let activity_type: String
-        let zone2_minutes: Int
-        let duration_minutes: Int
-        let avg_hr: Int?
-        let started_at: String
-        let source_name: String
-    }
-    struct Zone2Data: Decodable {
-        let today: TodayData
-        let weekly: WeeklyData
-        let recent_sessions: [Session]
-    }
+/// Zone 2 — /api/watch/zone2 (watch-auth; weekly Zone 2 progress + recent sessions).
+/// Uses Zone2Data from Models.swift — verified frozen contract 2026-06-14.
+@MainActor
+final class Zone2Model: ObservableObject {
+    @Published var data: Zone2Data?
+    @Published var error: String?
+    @Published var loading = false
 
-    @State private var data: Zone2Data?
-    @State private var isLoading = true
-    @State private var error: String?
+    func load() async {
+        loading = true; defer { loading = false }
+        do { data = try await API.shared.get("/api/watch/zone2", as: Zone2Data.self); error = nil }
+        catch APIError.notAuthed { error = "Pair watch" }
+        catch { self.error = "Offline" }
+    }
+}
+
+struct Zone2View: View {
+    @StateObject private var model = Zone2Model()
 
     var body: some View {
         ScrollView {
             VStack(spacing: 10) {
-                // Header
                 HStack {
                     Image(systemName: "heart.circle")
                         .foregroundStyle(Tokens.C.good)
@@ -38,23 +31,23 @@ struct Zone2View: View {
                     Spacer()
                 }
 
-                if isLoading {
+                if model.loading {
                     ProgressView().tint(Tokens.C.accent).frame(maxWidth: .infinity)
-                } else if let d = data {
+                } else if let d = model.data {
                     // Weekly ring
                     VStack(spacing: 4) {
                         ZStack {
                             Circle()
                                 .stroke(Tokens.C.card, lineWidth: 6)
                             Circle()
-                                .trim(from: 0, to: CGFloat(d.weekly.pct) / 100)
+                                .trim(from: 0, to: CGFloat(d.weekly?.pct ?? 0) / 100)
                                 .stroke(Tokens.C.good, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                                 .rotationEffect(.degrees(-90))
                             VStack(spacing: 0) {
-                                Text("\(d.weekly.total_min)")
+                                Text("\(d.weekly?.total_min ?? 0)")
                                     .font(Type.metric(22))
                                     .foregroundStyle(Tokens.C.ink)
-                                Text("/ \(d.weekly.target_min) min")
+                                Text("/ \(d.weekly?.target_min ?? 0) min")
                                     .font(Type.caption)
                                     .foregroundStyle(Tokens.C.ink2)
                             }
@@ -65,34 +58,33 @@ struct Zone2View: View {
                             .font(Type.caption)
                             .foregroundStyle(Tokens.C.ink2)
 
-                        if d.today.total_min > 0 {
-                            Text("Today: \(d.today.total_min) min")
+                        if (d.today?.total_min ?? 0) > 0 {
+                            Text("Today: \(d.today?.total_min ?? 0) min")
                                 .font(Type.caption)
                                 .foregroundStyle(Tokens.C.good)
                         }
                     }
                     .frame(maxWidth: .infinity)
 
-                    // Recent sessions
-                    if !d.recent_sessions.isEmpty {
+                    if let sessions = d.recent_sessions, !sessions.isEmpty {
                         Text("Recent")
                             .font(Type.caption)
                             .foregroundStyle(Tokens.C.ink2)
                             .frame(maxWidth: .infinity, alignment: .leading)
 
-                        ForEach(Array(d.recent_sessions.prefix(3).enumerated()), id: \.offset) { _, s in
+                        ForEach(Array(sessions.prefix(3).enumerated()), id: \.offset) { _, s in
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(s.activity_type.capitalized)
+                                    Text((s.activity_type ?? "").capitalized)
                                         .font(Type.caption)
                                         .foregroundStyle(Tokens.C.ink)
-                                    Text("\(s.zone2_minutes) min Z2 · \(s.duration_minutes) min total")
+                                    Text("\(s.zone2_minutes ?? 0) min Z2 · \(s.duration_minutes ?? 0) min total")
                                         .font(Type.caption)
                                         .foregroundStyle(Tokens.C.ink2)
                                 }
                                 Spacer()
                                 if let hr = s.avg_hr {
-                                    Text("\(hr) bpm")
+                                    Text("\(Int(hr)) bpm")
                                         .font(Type.caption)
                                         .foregroundStyle(Tokens.C.bad)
                                 }
@@ -102,25 +94,14 @@ struct Zone2View: View {
                             .clipShape(RoundedRectangle(cornerRadius: Tokens.S.cardRadius))
                         }
                     }
-                } else if let e = error {
+                } else if let e = model.error {
                     Text(e).font(Type.caption).foregroundStyle(Tokens.C.bad)
                 }
             }
             .padding(Tokens.S.gutter)
         }
         .background(Tokens.C.bg)
-        .task { await load() }
-    }
-
-    private func load() async {
-        isLoading = true
-        error = nil
-        do {
-            data = try await API.shared.get("/api/watch/zone2", as: Zone2Data.self)
-        } catch {
-            self.error = "Could not load Zone 2 data"
-        }
-        isLoading = false
+        .task { await model.load() }
     }
 }
 
