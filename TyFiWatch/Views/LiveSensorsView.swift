@@ -108,16 +108,16 @@ struct LiveSensorsView: View {
     private var skinTempTile: some View {
         let display: String
         if let c = hk.skinTempC {
-            display = units.isFahrenheit
-                ? String(format: "%.1f", c * 9 / 5 + 32)
-                : String(format: "%.1f", c)
+            display = units.celsius
+                ? String(format: "%.1f", c)
+                : String(format: "%.1f", c * 9 / 5 + 32)
         } else {
             display = "—"
         }
         return StatTile(
             label: "Skin Temp",
             value: display,
-            unit: hk.skinTempC != nil ? (units.isFahrenheit ? "°F" : "°C") : nil,
+            unit: hk.skinTempC != nil ? (units.celsius ? "°C" : "°F") : nil,
             color: Tokens.C.warn
         )
     }
