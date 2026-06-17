@@ -1,22 +1,23 @@
 import SwiftUI
 
-struct EnvironmentView: View {
-    struct AirQuality: Decodable { let aqi: Double?; let category: String? }
-    struct UV: Decodable { let index: Double?; let category: String? }
-    struct Pollen: Decodable { let dominant: String?; let level: String? }
-    struct Noise: Decodable { let env_db: Double?; let advisory: String? }
-    struct Weather: Decodable { let temp_c: Double?; let humidity_pct: Double? }
-    struct EnvData: Decodable {
-        let air_quality: AirQuality?
-        let uv: UV?
-        let pollen: Pollen?
-        let noise: Noise?
-        let weather: Weather?
-        let advisory: String?
-    }
+/// Environment — /api/watch/environment (watch-auth; AQI, UV, pollen, noise advisory).
+/// Uses EnvironmentReport from Models.swift — verified frozen contract 2026-06-14.
+@MainActor
+final class EnvironmentModel: ObservableObject {
+    @Published var report: EnvironmentReport?
+    @Published var error: String?
+    @Published var loading = false
 
-    @State private var data: EnvData?
-    @State private var isLoading = true
+    func load() async {
+        loading = true; defer { loading = false }
+        do { report = try await API.shared.get("/api/watch/environment", as: EnvironmentReport.self); error = nil }
+        catch APIError.notAuthed { error = "Pair watch" }
+        catch { self.error = "Offline" }
+    }
+}
+
+struct EnvironmentView: View {
+    @StateObject private var model = EnvironmentModel()
     @EnvironmentObject var units: Units
 
     var body: some View {
@@ -27,9 +28,9 @@ struct EnvironmentView: View {
                     Text("Environment").font(Type.label).foregroundStyle(Tokens.C.ink)
                     Spacer()
                 }
-                if isLoading {
+                if model.loading {
                     ProgressView().tint(Tokens.C.accent).frame(maxWidth: .infinity)
-                } else if let d = data {
+                } else if let d = model.report {
                     let cols = [GridItem(.flexible(), spacing: Tokens.S.gutter),
                                 GridItem(.flexible(), spacing: Tokens.S.gutter)]
                     LazyVGrid(columns: cols, spacing: Tokens.S.gutter) {
@@ -57,18 +58,10 @@ struct EnvironmentView: View {
                                      unit: "dB",
                                      color: db > 85 ? Tokens.C.bad : db > 70 ? Tokens.C.warn : Tokens.C.good)
                         }
-                        if let w = d.weather {
-                            if let t = w.temp_c {
-                                StatTile(label: "Temp",
-                                         value: units.temp(t * 9 / 5 + 32),
-                                         color: Tokens.C.cool)
-                            }
-                            if let h = w.humidity_pct {
-                                StatTile(label: "Humidity",
-                                         value: "\(Int(h))",
-                                         unit: "%",
-                                         color: Tokens.C.cool)
-                            }
+                        if let steps = d.steps {
+                            StatTile(label: "Steps",
+                                     value: "\(Int(steps))",
+                                     color: Tokens.C.accent)
                         }
                     }
                     if let adv = d.advisory {
@@ -76,18 +69,14 @@ struct EnvironmentView: View {
                             Text(adv).font(Type.caption).foregroundStyle(Tokens.C.ink2)
                         }
                     }
+                } else {
+                    Text(model.error ?? "No environment data").font(Type.caption).foregroundStyle(Tokens.C.ink3)
                 }
             }
             .padding(Tokens.S.gutter)
         }
         .background(Tokens.C.bg)
-        .task { await load() }
-    }
-
-    private func load() async {
-        isLoading = true
-        data = try? await API.shared.get("/api/watch/environment", as: EnvData.self)
-        isLoading = false
+        .task { await model.load() }
     }
 
     private func aqiColor(_ v: Double?) -> Color {
