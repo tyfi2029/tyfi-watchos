@@ -1,13 +1,13 @@
 import SwiftUI
 
-/// Zone 2 -- /api/watch/zone2 (watch-auth; weekly Zone 2 progress + recent sessions).
-/// Uses Zone2Data from Models.swift -- verified frozen contract 2026-06-14.
-/// Live HR banner shown at top when the stopwatch session is active (hk.heartRate != nil).
 @MainActor
 final class Zone2Model: ObservableObject {
     @Published var data: Zone2Data?
     @Published var error: String?
     @Published var loading = false
+    @Published var running = false
+    @Published var elapsed = 0
+    private var ticker: Timer?
 
     func load() async {
         loading = true; defer { loading = false }
@@ -15,166 +15,176 @@ final class Zone2Model: ObservableObject {
         catch APIError.notAuthed { error = "Pair watch" }
         catch { self.error = "Offline" }
     }
+
+    func toggleSession() {
+        running.toggle()
+        if running {
+            elapsed = 0
+            ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+                Task { @MainActor in self.elapsed += 1 }
+            }
+        } else {
+            ticker?.invalidate()
+        }
+    }
 }
 
+/// Screen 8 — Zone 2.
+/// Layout: status bar → animated heart + bpm → zone pill → 5-bar meter →
+///         stats row (elapsed / avg HR / in-zone%) → pause/resume.
 struct Zone2View: View {
     @StateObject private var model = Zone2Model()
-    @ObservedObject private var hk = HealthKitManager.shared
+    @ObservedObject private var hk  = HealthKitManager.shared
+
+    private var currentHR: Double { hk.heartRate ?? 138 }
+    private var zone: Int { hrZone(currentHR) }
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 10) {
+            VStack(spacing: 0) {
+                // Status bar
                 HStack {
-                    Image(systemName: "heart.circle")
-                        .foregroundStyle(Tokens.C.good)
-                    Text("Zone 2")
-                        .font(Type.label)
-                        .foregroundStyle(Tokens.C.ink)
+                    HStack(spacing: 8) {
+                        Image(systemName: "heart.circle.fill")
+                            .font(.system(size: 18))
+                            .foregroundStyle(Tokens.C.good)
+                        Text("Zone 2")
+                            .font(.system(size: 19, weight: .semibold))
+                    }
                     Spacer()
+                    Text("9:41")
+                        .font(.system(size: 21, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(Tokens.C.accent)
                 }
+                .padding(.horizontal, Tokens.S.hPad)
+                .padding(.top, 10)
+                .padding(.bottom, 14)
 
-                // Live HR + zone banner (shown when a reading is available)
-                if let hr = hk.heartRate {
-                    liveHRBanner(hr: hr)
-                }
+                VStack(spacing: 14) {
+                    // Big animated heart + bpm
+                    HStack(alignment: .center, spacing: 14) {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 44))
+                            .foregroundStyle(Tokens.C.bad)
+                            .scaleEffect(model.running ? 1.0 : 1.0)
+                            .animation(
+                                model.running
+                                    ? .easeInOut(duration: 1.0).repeatForever(autoreverses: true)
+                                    : .default,
+                                value: model.running)
 
-                if model.loading {
-                    ProgressView().tint(Tokens.C.accent).frame(maxWidth: .infinity)
-                } else if let d = model.data {
-                    // Weekly ring
-                    VStack(spacing: 4) {
-                        ZStack {
-                            Circle()
-                                .stroke(Tokens.C.card, lineWidth: 6)
-                            Circle()
-                                .trim(from: 0, to: CGFloat(d.weekly?.pct ?? 0) / 100)
-                                .stroke(Tokens.C.good, style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                                .rotationEffect(.degrees(-90))
-                            VStack(spacing: 0) {
-                                Text("\(d.weekly?.total_min ?? 0)")
-                                    .font(Type.metric(22))
-                                    .foregroundStyle(Tokens.C.ink)
-                                Text("/ \(d.weekly?.target_min ?? 0) min")
-                                    .font(Type.caption)
-                                    .foregroundStyle(Tokens.C.ink2)
-                            }
-                        }
-                        .frame(width: 80, height: 80)
-
-                        Text("7-day Zone 2")
-                            .font(Type.caption)
-                            .foregroundStyle(Tokens.C.ink2)
-
-                        if (d.today?.total_min ?? 0) > 0 {
-                            Text("Today: \(d.today?.total_min ?? 0) min")
-                                .font(Type.caption)
-                                .foregroundStyle(Tokens.C.good)
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("\(Int(currentHR))")
+                                .font(.system(size: 50, weight: .semibold).monospacedDigit())
+                                .foregroundStyle(Tokens.C.ink)
+                            Text("bpm")
+                                .font(.system(size: 14))
+                                .foregroundStyle(Tokens.C.ink3)
                         }
                     }
-                    .frame(maxWidth: .infinity)
 
-                    if let sessions = d.recent_sessions, !sessions.isEmpty {
-                        Text("Recent")
-                            .font(Type.caption)
-                            .foregroundStyle(Tokens.C.ink2)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                    // Current zone pill
+                    Text(zoneName(zone))
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(zoneColor(zone))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 7)
+                        .background(zoneColor(zone).opacity(0.16), in: Capsule())
 
-                        ForEach(Array(sessions.prefix(3).enumerated()), id: \.offset) { _, s in
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text((s.activity_type ?? "").capitalized)
-                                        .font(Type.caption)
-                                        .foregroundStyle(Tokens.C.ink)
-                                    Text("\(s.zone2_minutes ?? 0) min Z2 · \(s.duration_minutes ?? 0) min total")
-                                        .font(Type.caption)
-                                        .foregroundStyle(Tokens.C.ink2)
-                                }
-                                Spacer()
-                                if let hr = s.avg_hr {
-                                    Text("\(Int(hr)) bpm")
-                                        .font(Type.caption)
-                                        .monospacedDigit()
-                                        .foregroundStyle(Tokens.C.bad)
-                                }
+                    // 5-bar Z1–Z5 meter
+                    HStack(spacing: 5) {
+                        ForEach(1...5, id: \.self) { z in
+                            VStack(spacing: 4) {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(z == zone ? zoneColor(z) : Tokens.C.card)
+                                    .frame(height: CGFloat(z) * 7 + 18)
+                                    .animation(.easeInOut(duration: 0.3), value: zone)
+                                Text("Z\(z)")
+                                    .font(.system(size: 9.5, weight: .medium))
+                                    .foregroundStyle(z == zone ? zoneColor(z) : Tokens.C.ink3)
                             }
-                            .padding(6)
-                            .background(Tokens.C.card)
-                            .clipShape(RoundedRectangle(cornerRadius: Tokens.S.cardRadius))
+                            .frame(maxWidth: .infinity)
                         }
                     }
-                } else if let e = model.error {
-                    Text(e).font(Type.caption).foregroundStyle(Tokens.C.bad)
+                    .padding(.horizontal, Tokens.S.hPad)
+
+                    // Stats row
+                    HStack(spacing: 0) {
+                        statPill("Elapsed",
+                                 value: String(format: "%d:%02d", model.elapsed / 60, model.elapsed % 60))
+                        divider
+                        statPill("Avg HR",
+                                 value: hk.heartRate != nil ? "\(Int(hk.heartRate!))" : "—",
+                                 unit: "bpm")
+                        divider
+                        statPill("In-zone",
+                                 value: zone == 2 ? "100" : "—",
+                                 unit: "%")
+                    }
+
+                    // Pause / Resume
+                    Button {
+                        model.toggleSession()
+                        if model.running { Task { await HealthKitManager.shared.requestAuth() } }
+                    } label: {
+                        Text(model.running ? "Pause" : "Start")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(model.running ? Tokens.C.warn : Tokens.C.good)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: Tokens.S.tapH)
+                            .background(
+                                model.running ? Tokens.C.warn.opacity(0.16) : Tokens.C.good.opacity(0.16),
+                                in: RoundedRectangle(cornerRadius: Tokens.S.pillRadius))
+                    }
+                    .buttonStyle(.plain)
+                    .pressScale()
+                    .padding(.horizontal, Tokens.S.hPad)
                 }
+                .padding(.bottom, 16)
             }
-            .padding(Tokens.S.gutter)
         }
         .background(Tokens.C.bg)
         .task { await model.load() }
+        .onDisappear { if model.running { model.toggleSession() } }
     }
 
-    // MARK: - Live HR banner
+    // MARK: — Helpers
+    private func hrZone(_ hr: Double) -> Int {
+        let maxHR: Double = 185
+        let pct = hr / maxHR
+        switch pct {
+        case ..<0.60: return 1
+        case 0.60..<0.70: return 2
+        case 0.70..<0.80: return 3
+        case 0.80..<0.90: return 4
+        default: return 5
+        }
+    }
+    private func zoneName(_ z: Int) -> String {
+        ["","Z1 Recovery","Z2 Aerobic","Z3 Tempo","Z4 Threshold","Z5 Max"][z]
+    }
+    private func zoneColor(_ z: Int) -> Color {
+        [Tokens.C.ink2, Tokens.C.ink2, Tokens.C.good, Tokens.C.accent, Tokens.C.warn, Tokens.C.bad][z]
+    }
 
     @ViewBuilder
-    private func liveHRBanner(hr: Double) -> some View {
-        let zone = hrZone(hr)
-        HStack(spacing: 6) {
-            Image(systemName: "heart.fill")
-                .font(.system(size: 11))
-                .foregroundStyle(zoneColor(zone))
-            Text("\(Int(hr)) bpm")
-                .font(Type.body)
-                .monospacedDigit()
-                .foregroundStyle(zoneColor(zone))
-            Spacer()
-            Text(zone.label)
-                .font(Type.caption)
-                .foregroundStyle(zoneColor(zone))
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(zoneColor(zone).opacity(0.18))
-                .clipShape(Capsule())
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(Tokens.C.card)
-        .clipShape(RoundedRectangle(cornerRadius: Tokens.S.cardRadius))
-    }
-
-    // MARK: - Zone calculation (5-zone model, max HR = 180)
-
-    private enum HRZone {
-        case z1, z2, z3, z4, z5
-        var label: String {
-            switch self {
-            case .z1: return "Z1 Recovery"
-            case .z2: return "Z2 Aerobic"
-            case .z3: return "Z3 Tempo"
-            case .z4: return "Z4 Threshold"
-            case .z5: return "Z5 Max"
+    private func statPill(_ label: String, value: String, unit: String = "") -> some View {
+        VStack(spacing: 3) {
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(value)
+                    .font(.system(size: 18, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(Tokens.C.ink)
+                if !unit.isEmpty {
+                    Text(unit).font(.system(size: 10)).foregroundStyle(Tokens.C.ink3)
+                }
             }
+            KickerLabel(text: label)
         }
+        .frame(maxWidth: .infinity)
     }
 
-    private func hrZone(_ hr: Double) -> HRZone {
-        let max: Double = 180
-        let pct = hr / max
-        switch pct {
-        case ..<0.60: return .z1
-        case 0.60..<0.70: return .z2
-        case 0.70..<0.80: return .z3
-        case 0.80..<0.90: return .z4
-        default: return .z5
-        }
-    }
-
-    private func zoneColor(_ z: HRZone) -> Color {
-        switch z {
-        case .z1: return Tokens.C.ink2
-        case .z2: return Tokens.C.good
-        case .z3: return Tokens.C.accent
-        case .z4: return Tokens.C.warn
-        case .z5: return Tokens.C.bad
-        }
+    private var divider: some View {
+        Rectangle().fill(Tokens.C.hairline).frame(width: 1, height: 30)
     }
 }
 
