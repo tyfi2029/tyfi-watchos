@@ -38,11 +38,34 @@ LoadState scaffolding (T8), HK read-type completion (T70). That is this slice.
 | T76–T81 | DONE(code) | (design batches) | complications bundle complete |
 | T6,T7,T8,T57,T70 | pending | — | this slice |
 
-## Completed Tasks
-(see ledger below)
+## Completed Tasks (slice 1)
+- T2/T3 green baseline + reconciliation — a682655
+- T6 synthetic fixtures (16 GET endpoints) — 508ca11
+- T7 host-less test target + 16 decode tests — f1bff74
+- T57 MockURLProtocol + 11 POST contract tests — 921e867
+- T8 LoadState/Loader/placeholder subviews — a623d56
+- T70 HK restingHR + respiratoryRate read types — 7dfa0a3
 
 ## Blocked Tasks
-(none yet)
+(none) — circuit breaker never tripped.
+
+## Notes / morning follow-ups
+- T1 coord-register skipped: no external coord creds resolvable in autonomous run.
+- T5 LIVE_FIXTURES=false: no webhook creds; §1 forbids prod writes. Fixtures are
+  synthetic (TyFiWatchTests/Fixtures/README.md) — re-capture live read-only in AM.
+- POST mock-through-actor: URLProtocol does NOT intercept POST-with-httpBody on the
+  watchOS 11.5 sim (escapes to network). POST verified at encode/decode layer instead.
+  MockURLProtocol works for GET; revisit POST-body interception in AM if live mocking wanted.
+- T9–T56, T58–T69 (view wiring + POST actions) and T76–T81 (complications) are already
+  in committed code from the design batches and build green; left as DONE(code).
 
 ## Ledger
-2026-06-17T10:10 | T2 | DONE | build:ok | dceb8ef (verified)
+2026-06-17T10:10 | T2 | DONE         | build:ok | dceb8ef (verified)
+2026-06-17T10:11 | T3 | DONE         | build:ok | a682655
+2026-06-17T10:12 | T5 | OFFLINE      | n/a      | (LIVE_FIXTURES=false)
+2026-06-17T10:12 | T6 | DONE         | build:ok | 508ca11
+2026-06-17T10:18 | T7 | DONE         | test:ok  | f1bff74 (16 decode tests)
+2026-06-17T10:27 | T57| DONE         | test:ok  | 921e867 (11 contract tests)
+2026-06-17T10:28 | T8 | DONE         | build:ok | a623d56
+2026-06-17T10:29 | T70| DONE         | build:ok | 7dfa0a3
+2026-06-17T10:30 | --- | SLICE 1 END (6 commits, build+tests green, not a global-stop) | STOP
