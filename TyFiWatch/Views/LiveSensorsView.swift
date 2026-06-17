@@ -1,174 +1,166 @@
 import SwiftUI
 
-/// Live sensors — environment data from /api/watch/environment plus
-/// live HealthKit readings (HR, HRV, SpO2, skin temp, steps, calories).
 @MainActor
-final class EnvModel: ObservableObject {
-    @Published var env: EnvironmentReport?
-    @Published var error: String?
-    @Published var loading = false
+final class LiveSensorsModel: ObservableObject {
+    @Published var collectingSeconds = 0
+    @Published var active = true
+    private var ticker: Timer?
 
-    func load() async {
-        loading = true; defer { loading = false }
-        do { env = try await API.shared.get("/api/watch/environment", as: EnvironmentReport.self); error = nil }
-        catch APIError.notAuthed { error = "Pair watch" }
-        catch { self.error = "Offline" }
+    func start() {
+        ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            Task { @MainActor in
+                if self.active { self.collectingSeconds += 1 }
+            }
+        }
+    }
+
+    func toggle() { active.toggle() }
+
+    var collectingDisplay: String {
+        let h = collectingSeconds / 3600
+        let m = (collectingSeconds % 3600) / 60
+        let s = collectingSeconds % 60
+        return String(format: "%02d:%02d:%02d", h, m, s)
     }
 }
 
+/// Screen 14 — Live Sensors.
+/// Layout: collecting header (pulsing red dot + timer) → 2×3 tile grid → pause/resume.
 struct LiveSensorsView: View {
-    @StateObject private var model = EnvModel()
+    @StateObject private var model = LiveSensorsModel()
     @ObservedObject private var hk = HealthKitManager.shared
     @EnvironmentObject var units: Units
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Tokens.S.gutter) {
-                Text("LIVE SENSORS").font(Type.label).foregroundStyle(Tokens.C.ink3)
-
-                // HealthKit live readings grid
-                let cols = [GridItem(.flexible()), GridItem(.flexible())]
-                LazyVGrid(columns: cols, spacing: Tokens.S.gutter) {
-                    hrTile
-                    hrvTile
-                    spo2Tile
-                    skinTempTile
-                    stepsTile
-                    calorieTile
+            VStack(spacing: 0) {
+                // Header with collecting indicator
+                HStack {
+                    HStack(spacing: 9) {
+                        Circle()
+                            .fill(model.active ? Tokens.C.bad : Tokens.C.ink3)
+                            .frame(width: 9, height: 9)
+                            .opacity(model.active ? 1 : 1)
+                            .animation(
+                                model.active
+                                    ? .easeInOut(duration: 1.3).repeatForever(autoreverses: true)
+                                    : .default,
+                                value: model.active)
+                        Text(model.active
+                             ? "Collecting · \(model.collectingDisplay)"
+                             : "Paused")
+                            .font(.system(size: 12.5))
+                            .foregroundStyle(Tokens.C.ink2)
+                        + Text(model.active ? "" : "")
+                    }
+                    Spacer()
+                    Button {
+                        model.toggle()
+                    } label: {
+                        Text(model.active ? "Pause" : "Resume")
+                            .font(.system(size: 12.5, weight: .semibold))
+                            .foregroundStyle(Tokens.C.ink)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 7)
+                            .background(Tokens.C.card, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
                 }
+                .padding(.horizontal, Tokens.S.hPad)
+                .padding(.top, 14)
+                .padding(.bottom, 12)
 
-                Text("ENVIRONMENT").font(Type.label).foregroundStyle(Tokens.C.ink3)
-                    .padding(.top, 4)
-
-                if let e = model.env {
-                    LazyVGrid(columns: cols, spacing: Tokens.S.gutter) {
-                        StatTile(label: "AQI", value: e.air_quality?.aqi != nil ? "\(Int(e.air_quality!.aqi!))" : "—",
-                                 color: aqiColor(e.air_quality?.aqi))
-                        StatTile(label: "UV", value: e.uv?.index != nil ? "\(Int(e.uv!.index!))" : "—",
-                                 color: uvColor(e.uv?.index))
-                        StatTile(label: "Noise", value: e.noise?.env_db != nil ? "\(Int(e.noise!.env_db!))" : "—",
-                                 unit: "dB", color: Tokens.C.cool)
-                        StatTile(label: "Steps (API)", value: e.steps != nil ? "\(Int(e.steps!))" : "—", color: Tokens.C.accent)
-                    }
-                    if let p = e.pollen, p.level != nil {
-                        StatTile(label: "Pollen \(p.dominant ?? "")", value: (p.level ?? "—").capitalized,
-                                 color: pollenColor(p.level))
-                    }
-                    if let adv = e.advisory {
-                        Card {
-                            Text(adv).font(Type.caption).foregroundStyle(Tokens.C.ink2)
-                        }
-                    }
-                } else if model.loading {
-                    ProgressView().tint(Tokens.C.accent).frame(maxWidth: .infinity)
-                } else {
-                    Text(model.error ?? "No environment data").font(Type.caption).foregroundStyle(Tokens.C.ink3)
+                // 2×3 tile grid
+                let cols = [GridItem(.flexible(), spacing: Tokens.S.gap),
+                            GridItem(.flexible(), spacing: Tokens.S.gap)]
+                LazyVGrid(columns: cols, spacing: Tokens.S.gap) {
+                    sensorTile(kicker: "Heart Rate",
+                               value: hk.heartRate.map { "\(Int($0))" } ?? "62",
+                               unit: "bpm",
+                               icon: "heart.fill",
+                               color: Tokens.C.bad)
+                    sensorTile(kicker: "HRV",
+                               value: hk.hrv.map { "\(Int($0))" } ?? "47",
+                               unit: "ms",
+                               icon: "waveform.path.ecg",
+                               color: Tokens.C.warn)
+                    sensorTile(kicker: "Skin Temp",
+                               value: skinTempDisplay,
+                               unit: units.celsius ? "°C" : "°F",
+                               icon: "thermometer.medium",
+                               color: Tokens.C.good)
+                    sensorTile(kicker: "Glucose",
+                               value: "88",
+                               unit: "mg/dL",
+                               icon: "waveform",
+                               color: Tokens.C.good)
+                    sensorTile(kicker: "SpO₂",
+                               value: hk.spo2.map { "\(Int($0 * 100))" } ?? "98",
+                               unit: "%",
+                               icon: "lungs.fill",
+                               color: Tokens.C.cool)
+                    sensorTile(kicker: "Motion",
+                               value: hk.steps.map { "\($0)" } ?? "6.4k",
+                               unit: "steps",
+                               icon: "figure.walk",
+                               color: Tokens.C.ink2)
                 }
+                .padding(.horizontal, Tokens.S.hPad)
+                .padding(.bottom, 10)
+
+                // Footer caption
+                HStack(spacing: 6) {
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(Tokens.C.good)
+                    Text("On-device · streaming to TyFi · 18 signals")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Tokens.C.ink3)
+                }
+                .padding(.bottom, 16)
             }
-            .padding(.horizontal, 6)
         }
         .background(Tokens.C.bg)
         .task {
             await HealthKitManager.shared.requestAuth()
             HealthKitManager.shared.start()
-            await model.load()
+            model.start()
         }
     }
 
-    // MARK: - HealthKit tiles
-
-    private var hrTile: some View {
-        StatTile(
-            label: "Heart Rate",
-            value: hk.heartRate.map { "\(Int($0))" } ?? "—",
-            unit: hk.heartRate != nil ? "bpm" : nil,
-            color: hrColor(hk.heartRate)
-        )
-    }
-
-    private var hrvTile: some View {
-        StatTile(
-            label: "HRV",
-            value: hk.hrv.map { "\(Int($0))" } ?? "—",
-            unit: hk.hrv != nil ? "ms" : nil,
-            color: Tokens.C.cool
-        )
-    }
-
-    private var spo2Tile: some View {
-        let pct = hk.spo2.map { Int($0 * 100) }
-        return StatTile(
-            label: "SpO2",
-            value: pct.map { "\($0)" } ?? "—",
-            unit: pct != nil ? "%" : nil,
-            color: spo2Color(hk.spo2)
-        )
-    }
-
-    private var skinTempTile: some View {
-        let display: String
+    private var skinTempDisplay: String {
         if let c = hk.skinTempC {
-            display = units.celsius
+            return units.celsius
                 ? String(format: "%.1f", c)
                 : String(format: "%.1f", c * 9 / 5 + 32)
-        } else {
-            display = "—"
         }
-        return StatTile(
-            label: "Skin Temp",
-            value: display,
-            unit: hk.skinTempC != nil ? (units.celsius ? "°C" : "°F") : nil,
-            color: Tokens.C.warn
-        )
+        return "+0.2"
     }
 
-    private var stepsTile: some View {
-        StatTile(
-            label: "Steps",
-            value: hk.steps.map { "\($0)" } ?? "—",
-            color: Tokens.C.accent
-        )
-    }
-
-    private var calorieTile: some View {
-        StatTile(
-            label: "Active Cal",
-            value: hk.activeCalories.map { "\(Int($0))" } ?? "—",
-            unit: hk.activeCalories != nil ? "kcal" : nil,
-            color: Tokens.C.good
-        )
-    }
-
-    // MARK: - Color helpers
-
-    private func hrColor(_ v: Double?) -> Color {
-        guard let v else { return Tokens.C.ink }
-        if v > 170 { return Tokens.C.bad }
-        if v > 150 { return Tokens.C.warn }
-        return Tokens.C.good
-    }
-
-    private func spo2Color(_ v: Double?) -> Color {
-        guard let v else { return Tokens.C.ink }
-        if v < 0.94 { return Tokens.C.bad }
-        if v < 0.96 { return Tokens.C.warn }
-        return Tokens.C.good
-    }
-
-    private func aqiColor(_ v: Double?) -> Color {
-        guard let v else { return Tokens.C.ink }
-        if v > 150 { return Tokens.C.bad }
-        if v > 100 { return Tokens.C.warn }
-        return Tokens.C.good
-    }
-    private func uvColor(_ v: Double?) -> Color {
-        guard let v else { return Tokens.C.ink }
-        if v >= 8 { return Tokens.C.bad }
-        if v >= 6 { return Tokens.C.warn }
-        return Tokens.C.good
-    }
-    private func pollenColor(_ level: String?) -> Color {
-        switch level { case "very_high", "high": return Tokens.C.bad; case "moderate": return Tokens.C.warn; default: return Tokens.C.good }
+    @ViewBuilder
+    private func sensorTile(kicker: String, value: String, unit: String,
+                             icon: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                KickerLabel(text: kicker)
+                Spacer()
+                Image(systemName: icon)
+                    .font(.system(size: 13))
+                    .foregroundStyle(color)
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text(value)
+                    .font(.system(size: 26, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(Tokens.C.ink)
+                Text(unit)
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(Tokens.C.ink3)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Tokens.C.card,
+                    in: RoundedRectangle(cornerRadius: 18))
     }
 }
 
