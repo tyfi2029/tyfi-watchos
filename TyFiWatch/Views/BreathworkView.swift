@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Breathwork — 4-7-8 cadence engine (watch-side) with HKWorkoutSession for live HR capture.
+/// Breathwork -- 4-7-8 cadence engine (watch-side) with HKWorkoutSession for live HR capture.
 /// API session records the exercise; HealthKit captures the heart rate data.
+/// HR overlay uses the shared HealthKitManager.shared instance.
 enum BreathPhase: String {
     case idle = "Tap to begin"
     case inhale = "Inhale"
@@ -81,6 +82,7 @@ final class BreathModel: ObservableObject {
 
 struct BreathworkView: View {
     @StateObject private var model = BreathModel()
+    @ObservedObject private var hk = HealthKitManager.shared
 
     var body: some View {
         VStack(spacing: Tokens.S.gutter) {
@@ -107,12 +109,43 @@ struct BreathworkView: View {
             .font(Type.label)
             .tint(model.running ? Tokens.C.bad : Tokens.C.good)
 
+            // Live HR overlay -- shown during active breath session
+            if model.running {
+                HStack(spacing: 4) {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(hrColor)
+                    if let hr = hk.heartRate {
+                        Text("\(Int(hr)) bpm")
+                            .font(Type.caption)
+                            .monospacedDigit()
+                            .foregroundStyle(hrColor)
+                    } else {
+                        Text("— bpm")
+                            .font(Type.caption)
+                            .monospacedDigit()
+                            .foregroundStyle(Tokens.C.ink3)
+                    }
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Tokens.C.card)
+                .clipShape(Capsule())
+            }
+
             if let e = model.error { Text(e).font(Type.caption).foregroundStyle(Tokens.C.ink3) }
         }
         .padding(.horizontal, 6)
         .frame(maxHeight: .infinity)
         .background(Tokens.C.bg)
         .task { await HealthKitManager.shared.requestAuth() }
+    }
+
+    private var hrColor: Color {
+        guard let hr = hk.heartRate else { return Tokens.C.ink3 }
+        if hr > 170 { return Tokens.C.bad }
+        if hr > 150 { return Tokens.C.warn }
+        return Tokens.C.good
     }
 }
 
