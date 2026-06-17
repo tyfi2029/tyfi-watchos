@@ -1,14 +1,17 @@
 import SwiftUI
 
+/// Voice Note — /api/watch/capture/voice (POST).
+/// Uses CaptureBody from Models.swift — verified frozen contract 2026-06-14.
+/// Body: { transcript, idempotency_key, category_hint?, captured_at?, metadata? }
 struct VoiceNoteView: View {
     @State private var transcript = ""
-    @State private var tags: [String] = []
+    @State private var categoryHint: String? = nil
     @State private var isSaving = false
     @State private var saved = false
     @State private var errorMsg: String?
     @FocusState private var inputFocused: Bool
 
-    private let suggestedTags = ["health", "food", "mood", "idea", "work", "reminder"]
+    private let suggestedCategories = ["health", "food", "mood", "idea", "work", "reminder"]
 
     var body: some View {
         ScrollView {
@@ -31,20 +34,16 @@ struct VoiceNoteView: View {
                 if !transcript.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 6) {
-                            ForEach(suggestedTags, id: \.self) { tag in
-                                Button(tag) {
-                                    if tags.contains(tag) {
-                                        tags.removeAll { $0 == tag }
-                                    } else {
-                                        tags.append(tag)
-                                    }
+                            ForEach(suggestedCategories, id: \.self) { cat in
+                                Button(cat) {
+                                    categoryHint = categoryHint == cat ? nil : cat
                                 }
                                 .font(Type.caption)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(tags.contains(tag) ? Tokens.C.accent : Tokens.C.card)
+                                .background(categoryHint == cat ? Tokens.C.accent : Tokens.C.card)
                                 .clipShape(Capsule())
-                                .foregroundStyle(tags.contains(tag) ? Color.black : Tokens.C.ink2)
+                                .foregroundStyle(categoryHint == cat ? Color.black : Tokens.C.ink2)
                             }
                         }
                     }
@@ -75,20 +74,17 @@ struct VoiceNoteView: View {
     private func save() async {
         isSaving = true
         errorMsg = nil
-        struct Body: Encodable {
-            let transcript: String
-            let tags: [String]
-            let idempotency_key: String
-            let captured_at: String
-        }
-        struct Result: Decodable { let capture_id: String? }
-        let key = UUID().uuidString
-        let now = ISO8601DateFormatter().string(from: Date())
+        let body = CaptureBody(
+            transcript: transcript,
+            idempotency_key: UUID().uuidString,
+            category_hint: categoryHint,
+            captured_at: ISO8601DateFormatter().string(from: Date()),
+            metadata: nil)
         do {
             _ = try await API.shared.post(
                 "/api/watch/capture/voice",
-                body: Body(transcript: transcript, tags: tags, idempotency_key: key, captured_at: now),
-                as: Result.self)
+                body: body,
+                as: CaptureResult.self)
             saved = true
         } catch {
             errorMsg = "Save failed"
