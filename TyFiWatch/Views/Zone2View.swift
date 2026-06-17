@@ -7,7 +7,23 @@ final class Zone2Model: ObservableObject {
     @Published var loading = false
     @Published var running = false
     @Published var elapsed = 0
+    @Published var avgHR: Double?
+    @Published var inZonePct: Int?
     private var ticker: Timer?
+    private var hrSum = 0.0
+    private var hrCount = 0
+    private var inZoneCount = 0
+
+    /// Z1–Z5 from %max-HR. Shared by the model (accumulation) and the view (display).
+    static func zone(for hr: Double, maxHR: Double = 185) -> Int {
+        switch hr / maxHR {
+        case ..<0.60: return 1
+        case 0.60..<0.70: return 2
+        case 0.70..<0.80: return 3
+        case 0.80..<0.90: return 4
+        default: return 5
+        }
+    }
 
     func load() async {
         loading = true; defer { loading = false }
@@ -19,13 +35,25 @@ final class Zone2Model: ObservableObject {
     func toggleSession() {
         running.toggle()
         if running {
-            elapsed = 0
+            elapsed = 0; hrSum = 0; hrCount = 0; inZoneCount = 0
+            avgHR = nil; inZonePct = nil
+            Task { await HealthKitManager.shared.requestAuth(); HealthKitManager.shared.start() }
             ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-                Task { @MainActor in self.elapsed += 1 }
+                Task { @MainActor in self.tick() }
             }
         } else {
             ticker?.invalidate()
+            HealthKitManager.shared.stop()
         }
+    }
+
+    private func tick() {
+        elapsed += 1
+        guard let hr = HealthKitManager.shared.heartRate else { return }
+        hrSum += hr; hrCount += 1
+        if Self.zone(for: hr) == 2 { inZoneCount += 1 }
+        avgHR = hrSum / Double(hrCount)
+        inZonePct = Int((Double(inZoneCount) / Double(hrCount) * 100).rounded())
     }
 }
 
@@ -35,9 +63,10 @@ final class Zone2Model: ObservableObject {
 struct Zone2View: View {
     @StateObject private var model = Zone2Model()
     @ObservedObject private var hk  = HealthKitManager.shared
+    @State private var heartPulse = false
 
-    private var currentHR: Double { hk.heartRate ?? 138 }
-    private var zone: Int { hrZone(currentHR) }
+    /// Active zone only when a real sample exists; 0 = no live HR (nothing highlighted).
+    private var zone: Int { hk.heartRate.map { Zone2Model.zone(for: $0) } ?? 0 }
 
     var body: some View {
         ScrollView {
@@ -66,15 +95,15 @@ struct Zone2View: View {
                         Image(systemName: "heart.fill")
                             .font(.system(size: 44))
                             .foregroundStyle(Tokens.C.bad)
-                            .scaleEffect(model.running ? 1.0 : 1.0)
+                            .scaleEffect(heartPulse ? 1.14 : 1.0)
                             .animation(
                                 model.running
                                     ? .easeInOut(duration: 1.0).repeatForever(autoreverses: true)
                                     : .default,
-                                value: model.running)
+                                value: heartPulse)
 
                         VStack(alignment: .leading, spacing: 0) {
-                            Text("\(Int(currentHR))")
+                            Text(hk.heartRate.map { "\(Int($0))" } ?? "—")
                                 .font(.system(size: 50, weight: .semibold).monospacedDigit())
                                 .foregroundStyle(Tokens.C.ink)
                             Text("bpm")
@@ -114,18 +143,17 @@ struct Zone2View: View {
                                  value: String(format: "%d:%02d", model.elapsed / 60, model.elapsed % 60))
                         divider
                         statPill("Avg HR",
-                                 value: hk.heartRate != nil ? "\(Int(hk.heartRate!))" : "—",
+                                 value: model.avgHR.map { "\(Int($0))" } ?? "—",
                                  unit: "bpm")
                         divider
                         statPill("In-zone",
-                                 value: zone == 2 ? "100" : "—",
+                                 value: model.inZonePct.map { "\($0)" } ?? "—",
                                  unit: "%")
                     }
 
                     // Pause / Resume
                     Button {
                         model.toggleSession()
-                        if model.running { Task { await HealthKitManager.shared.requestAuth() } }
                     } label: {
                         Text(model.running ? "Pause" : "Start")
                             .font(.system(size: 16, weight: .semibold))
@@ -145,23 +173,13 @@ struct Zone2View: View {
         }
         .background(Tokens.C.bg)
         .task { await model.load() }
+        .onAppear { heartPulse = true }
         .onDisappear { if model.running { model.toggleSession() } }
     }
 
     // MARK: — Helpers
-    private func hrZone(_ hr: Double) -> Int {
-        let maxHR: Double = 185
-        let pct = hr / maxHR
-        switch pct {
-        case ..<0.60: return 1
-        case 0.60..<0.70: return 2
-        case 0.70..<0.80: return 3
-        case 0.80..<0.90: return 4
-        default: return 5
-        }
-    }
     private func zoneName(_ z: Int) -> String {
-        ["","Z1 Recovery","Z2 Aerobic","Z3 Tempo","Z4 Threshold","Z5 Max"][z]
+        ["Awaiting HR","Z1 Recovery","Z2 Aerobic","Z3 Tempo","Z4 Threshold","Z5 Max"][z]
     }
     private func zoneColor(_ z: Int) -> Color {
         [Tokens.C.ink2, Tokens.C.ink2, Tokens.C.good, Tokens.C.accent, Tokens.C.warn, Tokens.C.bad][z]
