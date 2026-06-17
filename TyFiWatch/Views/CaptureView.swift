@@ -1,19 +1,14 @@
 import SwiftUI
 
-/// Capture — quick-log tiles + Voice Note sheet.
-/// Quick log uses /api/watch/quick-log (POST) with QuickLogBody from Models.swift.
-/// Voice Note sheet uses VoiceNoteView (which posts /api/watch/capture/voice with CaptureBody).
 @MainActor
 final class CaptureModel: ObservableObject {
     @Published var loggedCategory: String? = nil
     @Published var isLogging = false
 
-    func quickLog(_ category: String, text: String) async {
+    func quickLog(_ category: String) async {
         isLogging = true
-        let body = QuickLogBody(
-            category: category, text: text,
-            logged_at: ISO8601DateFormatter().string(from: Date()),
-            metadata: nil)
+        let body = QuickLogBody(category: category, text: nil,
+            logged_at: ISO8601DateFormatter().string(from: Date()), metadata: nil)
         _ = try? await API.shared.post("/api/watch/quick-log", body: body, as: QuickLogResult.self)
         loggedCategory = category
         try? await Task.sleep(nanoseconds: 1_500_000_000)
@@ -22,72 +17,120 @@ final class CaptureModel: ObservableObject {
     }
 }
 
+/// Screen 9 — Capture.
+/// Layout: large orange hold-to-record mic (center) → 2×2 quick-capture tiles.
 struct CaptureView: View {
     @StateObject private var model = CaptureModel()
     @State private var showVoice = false
+    @State private var micPressed = false
 
-    private let quickItems: [(String, String, Color)] = [
-        ("💧 Water",      "water",         Tokens.C.cool),
-        ("☕ Caffeine",   "caffeine",      Tokens.C.warn),
-        ("💊 Supplement", "supplement",    Tokens.C.good),
-        ("✓ Protocol",    "protocol_item", Tokens.C.accent),
+    private let tiles: [(icon: String, label: String, category: String, color: Color)] = [
+        ("camera.fill",   "Meal",    "meal",      Tokens.C.good),
+        ("wave.3.right",  "RFID",    "rfid",      Tokens.C.cool),
+        ("thermometer",   "Thermal", "thermal",   Tokens.C.warn),
+        ("bolt.fill",     "Paste",   "paste",     Tokens.C.accent),
     ]
 
     var body: some View {
         ScrollView {
-            VStack(spacing: Tokens.S.gutter) {
+            VStack(spacing: 0) {
+                // Status bar
                 HStack {
-                    Image(systemName: "plus.circle.fill").foregroundStyle(Tokens.C.accent)
-                    Text("Capture").font(Type.label).foregroundStyle(Tokens.C.ink)
+                    Text("Capture")
+                        .font(.system(size: 19, weight: .semibold))
                     Spacer()
+                    Text("9:41")
+                        .font(.system(size: 21, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(Tokens.C.accent)
                 }
-                let cols = [GridItem(.flexible(), spacing: Tokens.S.gutter),
-                            GridItem(.flexible(), spacing: Tokens.S.gutter)]
-                LazyVGrid(columns: cols, spacing: Tokens.S.gutter) {
-                    ForEach(quickItems, id: \.0) { item in
+                .padding(.horizontal, Tokens.S.hPad)
+                .padding(.top, 10)
+                .padding(.bottom, 16)
+
+                VStack(spacing: 18) {
+                    // Big hold-to-record mic
+                    VStack(spacing: 8) {
                         Button {
-                            Task { await model.quickLog(item.1, text: item.0) }
+                            showVoice = true
                         } label: {
-                            VStack(spacing: 4) {
-                                Text(item.0)
-                                    .font(Type.body)
-                                    .foregroundStyle(item.2)
-                                    .multilineTextAlignment(.center)
-                                if model.loggedCategory == item.1 {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(Tokens.C.good)
-                                        .font(.caption)
+                            ZStack {
+                                Circle()
+                                    .fill(Tokens.C.accent.opacity(0.16))
+                                    .frame(width: 120 + 16, height: 120 + 16)
+                                Circle()
+                                    .fill(Tokens.C.accent)
+                                    .frame(width: 120, height: 120)
+                                VStack(spacing: 4) {
+                                    Image(systemName: "mic.fill")
+                                        .font(.system(size: 36, weight: .medium))
+                                        .foregroundStyle(Color.black)
+                                    Text("HOLD")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .tracking(1.5)
+                                        .foregroundStyle(Color.black.opacity(0.7))
                                 }
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding(10)
-                            .background(model.loggedCategory == item.1
-                                ? Tokens.C.good.opacity(0.15)
-                                : Tokens.C.card)
-                            .clipShape(RoundedRectangle(cornerRadius: Tokens.S.cardRadius))
                         }
                         .buttonStyle(.plain)
-                        .disabled(model.isLogging)
+                        .scaleEffect(micPressed ? 0.93 : 1.0)
+                        .animation(Motion.press, value: micPressed)
+                        .simultaneousGesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { _ in micPressed = true }
+                                .onEnded { _ in micPressed = false }
+                        )
+                        .simultaneousGesture(
+                            LongPressGesture(minimumDuration: 0.36).onEnded { _ in showVoice = true }
+                        )
+
+                        Text("or press the Action button")
+                            .font(.system(size: 12.5))
+                            .foregroundStyle(Tokens.C.ink3)
+                            .tracking(0.4)
                     }
-                }
-                Button {
-                    showVoice = true
-                } label: {
-                    HStack {
-                        Image(systemName: "mic.fill").foregroundStyle(Tokens.C.accent)
-                        Text("Voice Note").font(Type.label).foregroundStyle(Tokens.C.ink)
+
+                    // 2×2 quick-capture tiles
+                    let cols = [GridItem(.flexible(), spacing: Tokens.S.gap),
+                                GridItem(.flexible(), spacing: Tokens.S.gap)]
+                    LazyVGrid(columns: cols, spacing: Tokens.S.gap) {
+                        ForEach(tiles, id: \.category) { tile in
+                            Button {
+                                Task { await model.quickLog(tile.category) }
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: tile.icon)
+                                        .font(.system(size: 22))
+                                        .foregroundStyle(tile.color)
+                                    Text(tile.label)
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(model.loggedCategory == tile.category
+                                                         ? Tokens.C.good : Tokens.C.ink2)
+                                    Spacer()
+                                    if model.loggedCategory == tile.category {
+                                        Image(systemName: "checkmark")
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundStyle(Tokens.C.good)
+                                    }
+                                }
+                                .frame(height: 64)
+                                .padding(.horizontal, 14)
+                                .background(
+                                    model.loggedCategory == tile.category
+                                        ? Tokens.C.good.opacity(0.12) : Tokens.C.card,
+                                    in: RoundedRectangle(cornerRadius: Tokens.S.cardRadius))
+                            }
+                            .buttonStyle(.plain)
+                            .pressScale()
+                            .disabled(model.isLogging)
+                        }
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(10)
-                    .background(Tokens.C.card)
-                    .clipShape(RoundedRectangle(cornerRadius: Tokens.S.cardRadius))
+                    .padding(.horizontal, Tokens.S.hPad)
                 }
-                .buttonStyle(.plain)
-                .sheet(isPresented: $showVoice) { VoiceNoteView() }
+                .padding(.bottom, 16)
             }
-            .padding(Tokens.S.gutter)
         }
         .background(Tokens.C.bg)
+        .sheet(isPresented: $showVoice) { VoiceNoteView() }
     }
 }
 
