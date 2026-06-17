@@ -1,4 +1,5 @@
 import SwiftUI
+import HealthKit
 
 @MainActor
 final class Zone2Model: ObservableObject {
@@ -37,13 +38,18 @@ final class Zone2Model: ObservableObject {
         if running {
             elapsed = 0; hrSum = 0; hrCount = 0; inZoneCount = 0
             avgHR = nil; inZonePct = nil
-            Task { await HealthKitManager.shared.requestAuth(); HealthKitManager.shared.start() }
+            Task {
+                await HealthKitManager.shared.requestAuth()
+                HealthKitManager.shared.start()
+                await HealthKitManager.shared.startWorkout(activityType: .mixedCardio)
+            }
             ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
                 Task { @MainActor in self.tick() }
             }
         } else {
             ticker?.invalidate()
             HealthKitManager.shared.stop()
+            Task { await HealthKitManager.shared.stopWorkout() }
         }
     }
 

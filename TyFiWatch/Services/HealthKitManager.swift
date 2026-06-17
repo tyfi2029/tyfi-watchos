@@ -190,13 +190,17 @@ final class HealthKitManager: ObservableObject {
         store.execute(q)
     }
 
-    // MARK: - Breathwork session
+    // MARK: - Workout session (foreground + accurate HR for therapy/exercise)
 
-    func startBreathworkSession() async {
-        guard HKHealthStore.isHealthDataAvailable() else { return }
+    /// Start an `HKWorkoutSession` so watchOS keeps the app foregrounded and samples
+    /// HR at workout frequency. The anchored HR query (`start()`) reads those samples
+    /// into `heartRate`; this just raises sampling fidelity and prevents suspension.
+    func startWorkout(activityType: HKWorkoutActivityType,
+                      location: HKWorkoutSessionLocationType = .indoor) async {
+        guard HKHealthStore.isHealthDataAvailable(), workoutSession == nil else { return }
         let config = HKWorkoutConfiguration()
-        config.activityType = .mindAndBody
-        config.locationType = .indoor
+        config.activityType = activityType
+        config.locationType = location
         do {
             let session = try HKWorkoutSession(healthStore: store, configuration: config)
             let b = session.associatedWorkoutBuilder()
@@ -208,12 +212,23 @@ final class HealthKitManager: ObservableObject {
         } catch {}
     }
 
-    func stopBreathworkSession() async -> (preHRV: Double?, postHRV: Double?) {
+    func stopWorkout() async {
+        guard workoutSession != nil else { return }
         workoutSession?.end()
         do { try await builder?.endCollection(at: Date()) } catch {}
         do { try await builder?.finishWorkout() } catch {}
         workoutSession = nil
         builder = nil
+    }
+
+    // MARK: - Breathwork session (mindAndBody specialization)
+
+    func startBreathworkSession() async {
+        await startWorkout(activityType: .mindAndBody)
+    }
+
+    func stopBreathworkSession() async -> (preHRV: Double?, postHRV: Double?) {
+        await stopWorkout()
         return (nil, nil)
     }
 }

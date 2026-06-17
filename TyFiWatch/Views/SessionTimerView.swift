@@ -1,4 +1,5 @@
 import SwiftUI
+import HealthKit
 
 enum SessionMode: String, CaseIterable {
     case cold  = "Cold plunge"
@@ -37,6 +38,7 @@ final class SessionModel: ObservableObject {
         elapsed = 0; running = true; sessionDone = false; hrPeak = nil
         await HealthKitManager.shared.requestAuth()
         HealthKitManager.shared.start()   // begin live HR/HRV stream for the overlay
+        await HealthKitManager.shared.startWorkout(activityType: .other)  // foreground + accurate HR
         let body = SessionStartBody(mode: mode.rawValue.lowercased(),
             temp_f: tempF, target_sec: mode.target,
             started_at: ISO8601DateFormatter().string(from: Date()),
@@ -67,12 +69,14 @@ final class SessionModel: ObservableObject {
             _ = try? await API.shared.post("/api/watch/session/end", body: body, as: SessionEndResult.self)
         }
         HealthKitManager.shared.stop()
+        await HealthKitManager.shared.stopWorkout()
         await load()
     }
 
     func reset() {
         ticker?.invalidate(); running = false; elapsed = 0; sessionDone = false
         HealthKitManager.shared.stop()
+        Task { await HealthKitManager.shared.stopWorkout() }
     }
 }
 
