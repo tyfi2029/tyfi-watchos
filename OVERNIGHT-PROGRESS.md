@@ -99,3 +99,16 @@ FULL UDID `id=0E618FB6-449D-481A-A69A-49944628D27D`. Baseline re-verified green.
 2026-06-17THH:MM | T84 | DONE | build:ok | b2a2ae7
 2026-06-17THH:MM | T85 | DONE | build:ok | cf8ccd0
 2026-06-17THH:MM | --- | SLICE 2 END (9 commits, build green, not a global-stop). Remaining: T86 unsigned-archive dry-run, T87 full clean build+all tests, T88 morning handoff. | STOP
+
+## Completed Tasks (slice 3 — GLOBAL STOP)
+- T86 unsigned archive dry-run + fix: complications appex now embedded in app
+  bundle (dep was backwards, .appex never shipped); ARCHIVE SUCCEEDED — 4638bfa
+- T87 full clean build (BUILD SUCCEEDED) + all tests (TEST SUCCEEDED, 27/0) — 6b7dfbd
+- T88 morning handoff: OVERNIGHT-REPORT.md (per-task SHAs, findings, deploy checklist);
+  DONE-SENTINEL written
+
+## Ledger (slice 3)
+2026-06-17T10:50 | T86 | DONE | archive:ok | 4638bfa (unsigned ARCHIVE SUCCEEDED, appex embedded)
+2026-06-17T10:53 | T87 | DONE | build:ok test:ok(27/0) | 6b7dfbd
+2026-06-17T10:55 | T88 | DONE | handoff written | (T88 commit)
+2026-06-17T10:55 | --- | GLOBAL STOP — all 88 tasks resolved. See OVERNIGHT-REPORT.md. DONE-SENTINEL written. | END
