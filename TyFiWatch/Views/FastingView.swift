@@ -1,12 +1,15 @@
 import SwiftUI
 
-/// Fasting — E2 enhancement: protocol picker on start, stage label, dynamic target ring.
-/// GET /api/watch/fasting returns active.stage, active.target_hrs, active.protocol.
 @MainActor
 final class FastingModel: ObservableObject {
     @Published var state: FastingState?
     @Published var error: String?
     @Published var busy = false
+    @Published var showProtocolPicker = false
+    @Published var selectedProtocol = "16:8"
+    @Published var selectedHours: Double = 16
+    @Published var tickCount = 0          // drives 1-second live display
+    private var ticker: Timer?
 
     func load() async {
         do { state = try await API.shared.get("/api/watch/fasting", as: FastingState.self); error = nil }
@@ -14,7 +17,13 @@ final class FastingModel: ObservableObject {
         catch { self.error = "Offline" }
     }
 
-    func start(`protocol` proto: String, targetHours: Double) async {
+    func startTicker() {
+        ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            Task { @MainActor in self.tickCount += 1 }
+        }
+    }
+
+    func start(protocol proto: String, targetHours: Double) async {
         busy = true; defer { busy = false }
         struct StartBody: Encodable { let action: String; let `protocol`: String; let target_hours: Double }
         struct R: Decodable { let started: Bool? }
@@ -32,84 +41,139 @@ final class FastingModel: ObservableObject {
     }
 }
 
-private let protocols: [(label: String, hours: Double)] = [
+private let protocolOptions: [(label: String, hours: Double)] = [
     ("13:11", 13), ("16:8", 16), ("18:6", 18), ("20:4", 20), ("OMAD", 23), ("36h", 36),
 ]
 
+/// Screen 21 — Fasting (16:8 window).
+/// Layout: status bar → fasting ring (accent stroke) → streak chip → end/start toggle.
 struct FastingView: View {
     @StateObject private var model = FastingModel()
-    @State private var showProtocolPicker = false
-    @State private var selectedProtocol = "16:8"
-    @State private var selectedHours: Double = 16
+
+    private var displayElapsed: String {
+        let hrs = model.state?.active?.elapsed_hrs ?? 0
+        let totalMin = Int(hrs * 60) + model.tickCount  // live tick
+        let h = totalMin / 60, m = totalMin % 60
+        return String(format: "%d:%02d", h, m)
+    }
+
+    private var ringPct: Double {
+        Double(model.state?.active?.progress_pct ?? 0) / 100
+    }
 
     var body: some View {
         ScrollView {
-            VStack(spacing: Tokens.S.gutter) {
-                Text("FASTING").font(Type.label).foregroundStyle(Tokens.C.ink3)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                let a = model.state?.active
-                ZStack {
-                    Ring(progress: Double(a?.progress_pct ?? 0) / 100, color: ringColor, lineWidth: 11)
-                        .frame(width: 120, height: 120)
-                    VStack(spacing: 0) {
-                        Text(a != nil ? String(format: "%.1f", a!.elapsed_hrs ?? 0) : "—")
-                            .font(Type.metric(34)).foregroundStyle(Tokens.C.ink)
-                        Text(a != nil ? "of \(Int(a!.target_hrs ?? 16))h" : "not fasting")
-                            .font(Type.caption).foregroundStyle(Tokens.C.ink2)
-                    }
-                }.padding(.top, 4)
-
-                // Stage label
-                if let stage = a?.stage {
-                    Text(stage)
-                        .font(Type.caption)
-                        .foregroundStyle(stageColor(stage))
-                        .padding(.horizontal, 10).padding(.vertical, 4)
-                        .background(stageColor(stage).opacity(0.15))
-                        .clipShape(Capsule())
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Text("FASTING")
+                        .font(.system(size: 13, weight: .medium))
+                        .tracking(2.0)
+                        .foregroundStyle(Tokens.C.ink3)
+                    Spacer()
+                    Text("9:41")
+                        .font(.system(size: 21, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(Tokens.C.accent)
                 }
+                .padding(.horizontal, Tokens.S.hPad)
+                .padding(.top, 16)
+                .padding(.bottom, 14)
 
-                HStack(spacing: Tokens.S.gutter) {
-                    StatTile(label: "Streak", value: "\(model.state?.streak ?? 0)", unit: "d",
-                             color: Tokens.C.accent)
-                    if let a {
-                        StatTile(label: "Remaining",
-                                 value: String(format: "%.1fh", a.remaining_hrs ?? 0),
-                                 color: Tokens.C.cool)
+                VStack(spacing: 14) {
+                    // Main ring
+                    ZStack {
+                        Ring(progress: ringPct, color: ringColor, lineWidth: 11)
+                            .frame(width: 160, height: 160)
+                        VStack(spacing: 1) {
+                            Text(model.state?.active != nil ? displayElapsed : "—")
+                                .font(.system(size: 40, weight: .semibold).monospacedDigit())
+                                .foregroundStyle(Tokens.C.ink)
+                            Text(model.state?.active != nil
+                                 ? "/\(Int(model.state!.active!.target_hrs ?? 16)):00"
+                                 : "not fasting")
+                                .font(.system(size: 16))
+                                .foregroundStyle(Tokens.C.ink2)
+                        }
+                    }
+
+                    // Stage + streak row
+                    HStack(spacing: 10) {
+                        if let streak = model.state?.streak, streak > 0 {
+                            HStack(spacing: 5) {
+                                Image(systemName: "flame.fill")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(Tokens.C.good)
+                                Text("\(streak)d streak")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(Tokens.C.good)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Tokens.C.good.opacity(0.14), in: Capsule())
+                        }
+
+                        if let stage = model.state?.active?.stage {
+                            Text(stage)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(stageColor(stage))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(stageColor(stage).opacity(0.15), in: Capsule())
+                        }
+                    }
+
+                    // Stats row
+                    if let a = model.state?.active {
+                        HStack(spacing: Tokens.S.gap) {
+                            StatTile(label: "Elapsed",
+                                     value: displayElapsed,
+                                     color: Tokens.C.accent)
+                            StatTile(label: "Remaining",
+                                     value: String(format: "%.1fh", a.remaining_hrs ?? 0),
+                                     color: Tokens.C.cool)
+                        }
+                    }
+
+                    // End / Start button
+                    if model.state?.active != nil {
+                        Button("End Fast") { Task { await model.end() } }
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Tokens.C.bad)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: Tokens.S.tapH)
+                            .background(Tokens.C.bad.opacity(0.16),
+                                        in: RoundedRectangle(cornerRadius: Tokens.S.pillRadius))
+                            .buttonStyle(.plain)
+                            .disabled(model.busy)
                     } else {
-                        StatTile(label: "Window",
-                                 value: model.state?.eating_window?.open == true ? "Open" : "—",
-                                 color: Tokens.C.cool)
+                        Button("Start Eating") {
+                            model.showProtocolPicker = true
+                        }
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Tokens.C.good)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: Tokens.S.tapH)
+                        .background(Tokens.C.good.opacity(0.16),
+                                    in: RoundedRectangle(cornerRadius: Tokens.S.pillRadius))
+                        .buttonStyle(.plain)
+                        .disabled(model.busy)
+                    }
+
+                    if let e = model.error {
+                        Text(e).font(Type.caption).foregroundStyle(Tokens.C.warn)
                     }
                 }
-
-                // Protocol display when fasting
-                if let proto = a?.`protocol` {
-                    Text(proto).font(Type.caption).foregroundStyle(Tokens.C.ink3)
-                }
-
-                if a != nil {
-                    Button("End Fast") { Task { await model.end() } }
-                        .font(Type.label).tint(Tokens.C.bad).disabled(model.busy)
-                } else {
-                    Button("Start Fast") { showProtocolPicker = true }
-                        .font(Type.label).tint(Tokens.C.good).disabled(model.busy)
-                }
-
-                if let e = model.error {
-                    Text(e).font(Type.caption).foregroundStyle(Tokens.C.warn)
-                }
+                .padding(.horizontal, Tokens.S.hPad)
+                .padding(.bottom, 16)
             }
-            .padding(.horizontal, 6)
         }
         .background(Tokens.C.bg)
-        .task { await model.load() }
-        .sheet(isPresented: $showProtocolPicker) {
-            ProtocolPickerView(selected: $selectedProtocol, hours: $selectedHours) {
-                showProtocolPicker = false
-                Task { await model.start(`protocol`: selectedProtocol, targetHours: selectedHours) }
-            }
+        .task {
+            await model.load()
+            model.startTicker()
+        }
+        .sheet(isPresented: $model.showProtocolPicker) {
+            protocolSheet
         }
     }
 
@@ -124,43 +188,43 @@ struct FastingView: View {
         switch stage {
         case "Autophagy":    return Tokens.C.good
         case "Deep Ketosis": return Tokens.C.accent
-        case "Ketosis":      return Tokens.C.cool
-        case "Fat Burning":  return Tokens.C.cool
-        default:             return Tokens.C.ink2
+        case "Ketosis", "Fat Burning": return Tokens.C.cool
+        default: return Tokens.C.ink2
         }
     }
-}
 
-struct ProtocolPickerView: View {
-    @Binding var selected: String
-    @Binding var hours: Double
-    let onConfirm: () -> Void
-
-    var body: some View {
-        VStack(spacing: Tokens.S.gutter) {
-            Text("Choose Protocol").font(Type.label).foregroundStyle(Tokens.C.ink)
-            ForEach(protocols, id: \.label) { p in
+    private var protocolSheet: some View {
+        VStack(spacing: Tokens.S.gap) {
+            KickerLabel(text: "Choose Protocol").padding(.top, 4)
+            ForEach(protocolOptions, id: \.label) { p in
                 Button {
-                    selected = p.label
-                    hours = p.hours
-                    onConfirm()
+                    model.selectedProtocol = p.label
+                    model.selectedHours    = p.hours
+                    model.showProtocolPicker = false
+                    Task { await model.start(protocol: p.label, targetHours: p.hours) }
                 } label: {
                     HStack {
-                        Text(p.label).font(Type.body).foregroundStyle(Tokens.C.ink)
+                        Text(p.label)
+                            .font(.system(size: 16))
+                            .foregroundStyle(Tokens.C.ink)
                         Spacer()
-                        Text("\(Int(p.hours))h").font(Type.caption).foregroundStyle(Tokens.C.ink3)
-                        if selected == p.label {
-                            Image(systemName: "checkmark").foregroundStyle(Tokens.C.good)
+                        Text("\(Int(p.hours))h")
+                            .font(.system(size: 13).monospacedDigit())
+                            .foregroundStyle(Tokens.C.ink3)
+                        if model.selectedProtocol == p.label {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Tokens.C.good)
                         }
                     }
-                    .padding(8)
-                    .background(Tokens.C.card)
-                    .clipShape(RoundedRectangle(cornerRadius: Tokens.S.cardRadius))
+                    .padding(10)
+                    .background(Tokens.C.card,
+                                in: RoundedRectangle(cornerRadius: Tokens.S.cardRadius))
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(Tokens.S.gutter)
+        .padding(Tokens.S.hPad)
         .background(Tokens.C.bg)
     }
 }
