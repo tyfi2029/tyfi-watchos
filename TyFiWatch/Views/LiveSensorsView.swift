@@ -4,6 +4,9 @@ import SwiftUI
 final class LiveSensorsModel: ObservableObject {
     @Published var collectingSeconds = 0
     @Published var active = true
+    /// Glucose is the only network-sourced tile (CGM via /snapshot); HK tiles stream
+    /// directly off `HealthKitManager`. LoadState drives just the glucose tile.
+    @Published var glucose: LoadState<Int> = .loading
     private var ticker: Timer?
 
     func start() {
@@ -11,6 +14,22 @@ final class LiveSensorsModel: ObservableObject {
             Task { @MainActor in
                 if self.active { self.collectingSeconds += 1 }
             }
+        }
+    }
+
+    func loadGlucose() async {
+        glucose = .loading
+        do {
+            let snap = try await API.shared.get("/api/watch/snapshot", as: Snapshot.self)
+            if let mgdl = snap.cgm?.glucose_mg_dl {
+                glucose = .loaded(mgdl)
+            } else {
+                glucose = .empty
+            }
+        } catch APIError.notAuthed {
+            glucose = .failed("Pair watch to sync")
+        } catch {
+            glucose = .failed("Offline")
         }
     }
 
@@ -75,12 +94,12 @@ struct LiveSensorsView: View {
                             GridItem(.flexible(), spacing: Tokens.S.gap)]
                 LazyVGrid(columns: cols, spacing: Tokens.S.gap) {
                     sensorTile(kicker: "Heart Rate",
-                               value: hk.heartRate.map { "\(Int($0))" } ?? "62",
+                               value: hk.heartRate.map { "\(Int($0))" } ?? "—",
                                unit: "bpm",
                                icon: "heart.fill",
                                color: Tokens.C.bad)
                     sensorTile(kicker: "HRV",
-                               value: hk.hrv.map { "\(Int($0))" } ?? "47",
+                               value: hk.hrv.map { "\(Int($0))" } ?? "—",
                                unit: "ms",
                                icon: "waveform.path.ecg",
                                color: Tokens.C.warn)
@@ -90,17 +109,17 @@ struct LiveSensorsView: View {
                                icon: "thermometer.medium",
                                color: Tokens.C.good)
                     sensorTile(kicker: "Glucose",
-                               value: "88",
+                               value: glucoseDisplay,
                                unit: "mg/dL",
                                icon: "waveform",
                                color: Tokens.C.good)
                     sensorTile(kicker: "SpO₂",
-                               value: hk.spo2.map { "\(Int($0 * 100))" } ?? "98",
+                               value: hk.spo2.map { "\(Int($0 * 100))" } ?? "—",
                                unit: "%",
                                icon: "lungs.fill",
                                color: Tokens.C.cool)
                     sensorTile(kicker: "Motion",
-                               value: hk.steps.map { "\($0)" } ?? "6.4k",
+                               value: hk.steps.map { "\($0)" } ?? "—",
                                unit: "steps",
                                icon: "figure.walk",
                                color: Tokens.C.ink2)
@@ -125,16 +144,23 @@ struct LiveSensorsView: View {
             await HealthKitManager.shared.requestAuth()
             HealthKitManager.shared.start()
             model.start()
+            await model.loadGlucose()
+        }
+    }
+
+    private var glucoseDisplay: String {
+        switch model.glucose {
+        case .loaded(let mgdl): return "\(mgdl)"
+        case .loading:          return "…"
+        case .empty, .failed:   return "—"
         }
     }
 
     private var skinTempDisplay: String {
-        if let c = hk.skinTempC {
-            return units.celsius
-                ? String(format: "%.1f", c)
-                : String(format: "%.1f", c * 9 / 5 + 32)
-        }
-        return "+0.2"
+        guard let c = hk.skinTempC else { return "—" }
+        return units.celsius
+            ? String(format: "%.1f", c)
+            : String(format: "%.1f", c * 9 / 5 + 32)
     }
 
     @ViewBuilder
