@@ -57,6 +57,7 @@
 		DCAD7E2C8A4623DB4126F83C /* ReadinessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA64710B549D932DC1594F9 /* ReadinessView.swift */; };
 		E75C1BCEF42E2CFE43E6E5B9 /* snapshot.json in Resources */ = {isa = PBXBuildFile; fileRef = A139CC8DD23EB3660027F6FE /* snapshot.json */; };
 		EA0608A4A5B1C84A20BA52EF /* session.json in Resources */ = {isa = PBXBuildFile; fileRef = FFAB23A80445752E04486FF9 /* session.json */; };
+		EA84E98BC726EA5D020D6718 /* LoadState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B4355F1FC538C797E1F7F7E /* LoadState.swift */; };
 		EB794517BB45C90957F32DBA /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2EE7E1D6EAEEEFB2A741F8 /* Models.swift */; };
 		EC51B3DF2F3DE05BB589B327 /* VoiceNoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D4EB8EE7F4CB651D6AF2857 /* VoiceNoteView.swift */; };
 		F5A3825D18B9715E6175ECED /* ProtocolView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1BC004A9E92EA3852AA0BCB /* ProtocolView.swift */; };
@@ -84,6 +85,7 @@
 		13CC2B86F4F303B4654B0304 /* TyFiComplicationsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TyFiComplicationsBundle.swift; sourceTree = "<group>"; };
 		13F3E8237730C4745EAB418D /* winddown.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = winddown.json; sourceTree = "<group>"; };
 		16BEFC0662857460EF1449FA /* TrendsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendsView.swift; sourceTree = "<group>"; };
+		1B4355F1FC538C797E1F7F7E /* LoadState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadState.swift; sourceTree = "<group>"; };
 		1ED32C555BE229B5C029A036 /* TyFiWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TyFiWatchApp.swift; sourceTree = "<group>"; };
 		1F770493796D0B5CF33BEF0A /* TyFiWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TyFiWatch.entitlements; sourceTree = "<group>"; };
 		1FE05B0F85371409D36E8142 /* CheckInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInView.swift; sourceTree = "<group>"; };
@@ -212,6 +214,7 @@
 			isa = PBXGroup;
 			children = (
 				C4D633B42F756607DCF79DAA /* Components.swift */,
+				1B4355F1FC538C797E1F7F7E /* LoadState.swift */,
 				ECD7B431A95993F8FE147556 /* Motion.swift */,
 				6ED1AEC452A052EDC74B4207 /* Tokens.swift */,
 				A16CBCBA8848C389DAA22113 /* Typography.swift */,
@@ -446,6 +449,7 @@
 				A70AE599DFFB3663FB786BC3 /* HealthKitManager.swift in Sources */,
 				8EAFB094349ED117E2F5F937 /* HomeView.swift in Sources */,
 				FAC77A6A675200BAF2CD50DF /* LiveSensorsView.swift in Sources */,
+				EA84E98BC726EA5D020D6718 /* LoadState.swift in Sources */,
 				EB794517BB45C90957F32DBA /* Models.swift in Sources */,
 				2808723F81DB0131EA18DD2D /* Motion.swift in Sources */,
 				2EA0845C44A1E7EAF31C3F30 /* NowView.swift in Sources */,
