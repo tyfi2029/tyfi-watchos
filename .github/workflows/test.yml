@@ -1,7 +1,30 @@
-name: Test
-on: [workflow_dispatch]
+name: Build Check (watchOS Simulator)
+on: [workflow_dispatch, push]
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: macos-15
+    timeout-minutes: 30
     steps:
-    - run: echo "Runner works"
+    - uses: actions/checkout@v4
+
+    - name: Select Xcode
+      run: |
+        XCODE=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+        sudo xcode-select -s "$XCODE/Contents/Developer"
+        xcodebuild -version
+
+    - name: Install xcodegen
+      run: brew install xcodegen
+
+    - name: Generate project
+      run: xcodegen generate --spec project.yml --project .
+
+    - name: Build TyFiWatch (watchOS Simulator)
+      run: |
+        xcodebuild \
+          -scheme TyFiWatch \
+          -destination 'platform=watchOS Simulator,name=Apple Watch Ultra 2 (49mm)' \
+          -project TyFiWatch.xcodeproj \
+          CODE_SIGNING_ALLOWED=NO \
+          build \
+          2>&1 | tail -30
