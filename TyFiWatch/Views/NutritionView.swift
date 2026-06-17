@@ -1,39 +1,27 @@
 import SwiftUI
 
-struct NutritionView: View {
-    struct Macros: Decodable {
-        let calories: Int
-        let protein: Int
-        let carbs: Int
-        let fat: Int
-        let meal_count: Int
-        let last_logged: String?
-    }
-    struct CGM: Decodable {
-        let glucose: Int
-        let trend: String
-        let seconds_ago: Int
-    }
-    struct Targets: Decodable {
-        let calories: Int
-        let protein: Int
-        let carbs: Int
-        let fat: Int
-    }
-    struct NutritionData: Decodable {
-        let today: Macros
-        let glucose: CGM?
-        let targets: Targets
-    }
+/// Nutrition — /api/watch/nutrition (watch-auth; daily macros + CGM overlay).
+/// Uses NutritionData from Models.swift — verified frozen contract 2026-06-14.
+@MainActor
+final class NutritionModel: ObservableObject {
+    @Published var data: NutritionData?
+    @Published var error: String?
+    @Published var loading = false
 
-    @State private var data: NutritionData?
-    @State private var isLoading = true
-    @State private var error: String?
+    func load() async {
+        loading = true; defer { loading = false }
+        do { data = try await API.shared.get("/api/watch/nutrition", as: NutritionData.self); error = nil }
+        catch APIError.notAuthed { error = "Pair watch" }
+        catch { self.error = "Offline" }
+    }
+}
+
+struct NutritionView: View {
+    @StateObject private var model = NutritionModel()
 
     var body: some View {
         ScrollView {
             VStack(spacing: 10) {
-                // Header
                 HStack {
                     Image(systemName: "fork.knife")
                         .foregroundStyle(Tokens.C.accent)
@@ -41,49 +29,43 @@ struct NutritionView: View {
                         .font(Type.label)
                         .foregroundStyle(Tokens.C.ink)
                     Spacer()
-                    if let cgm = data?.glucose {
-                        Text("\(cgm.glucose)")
+                    if let cgm = model.data?.glucose {
+                        Text("\(cgm.glucose ?? 0)")
                             .font(Type.metric(13))
-                            .foregroundStyle(glucoseColor(cgm.glucose))
+                            .foregroundStyle(glucoseColor(cgm.glucose ?? 0))
                         + Text(" mg/dL")
                             .font(Type.caption)
                             .foregroundStyle(Tokens.C.ink2)
                     }
                 }
 
-                if isLoading {
+                if model.loading {
                     ProgressView().tint(Tokens.C.accent).frame(maxWidth: .infinity)
-                } else if let d = data {
-                    // Calories
+                } else if let d = model.data {
                     MacroRow(label: "Calories",
-                             value: d.today.calories,
-                             target: d.targets.calories,
+                             value: d.today?.calories ?? 0,
+                             target: d.targets?.calories ?? 0,
                              unit: "kcal",
                              color: Tokens.C.accent)
-
-                    // Protein
                     MacroRow(label: "Protein",
-                             value: d.today.protein,
-                             target: d.targets.protein,
+                             value: d.today?.protein ?? 0,
+                             target: d.targets?.protein ?? 0,
                              unit: "g",
                              color: Tokens.C.good)
-
-                    // Carbs
                     MacroRow(label: "Carbs",
-                             value: d.today.carbs,
-                             target: d.targets.carbs,
+                             value: d.today?.carbs ?? 0,
+                             target: d.targets?.carbs ?? 0,
                              unit: "g",
                              color: Tokens.C.warn)
-
-                    // Fat
                     MacroRow(label: "Fat",
-                             value: d.today.fat,
-                             target: d.targets.fat,
+                             value: d.today?.fat ?? 0,
+                             target: d.targets?.fat ?? 0,
                              unit: "g",
                              color: Tokens.C.cool)
 
-                    if d.today.meal_count > 0 {
-                        Text("\(d.today.meal_count) meal\(d.today.meal_count == 1 ? "" : "s") today")
+                    let meals = d.today?.meal_count ?? 0
+                    if meals > 0 {
+                        Text("\(meals) meal\(meals == 1 ? "" : "s") today")
                             .font(Type.caption)
                             .foregroundStyle(Tokens.C.ink3)
                     } else {
@@ -91,14 +73,14 @@ struct NutritionView: View {
                             .font(Type.caption)
                             .foregroundStyle(Tokens.C.ink3)
                     }
-                } else if let e = error {
+                } else if let e = model.error {
                     Text(e).font(Type.caption).foregroundStyle(Tokens.C.bad)
                 }
             }
             .padding(Tokens.S.gutter)
         }
         .background(Tokens.C.bg)
-        .task { await load() }
+        .task { await model.load() }
     }
 
     private func glucoseColor(_ mg: Int) -> Color {
@@ -109,17 +91,6 @@ struct NutritionView: View {
         default: return Tokens.C.bad
         }
     }
-
-    private func load() async {
-        isLoading = true
-        error = nil
-        do {
-            data = try await API.shared.get("/api/watch/nutrition", as: NutritionData.self)
-        } catch {
-            self.error = "Could not load nutrition"
-        }
-        isLoading = false
-    }
 }
 
 private struct MacroRow: View {
@@ -129,7 +100,7 @@ private struct MacroRow: View {
     let unit: String
     let color: Color
 
-    var pct: Double { min(1.0, Double(value) / Double(target)) }
+    var pct: Double { target > 0 ? min(1.0, Double(value) / Double(target)) : 0 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
