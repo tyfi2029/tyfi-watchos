@@ -1,9 +1,30 @@
 import SwiftUI
 
+/// Capture — quick-log tiles + Voice Note sheet.
+/// Quick log uses /api/watch/quick-log (POST) with QuickLogBody from Models.swift.
+/// Voice Note sheet uses VoiceNoteView (which posts /api/watch/capture/voice with CaptureBody).
+@MainActor
+final class CaptureModel: ObservableObject {
+    @Published var loggedCategory: String? = nil
+    @Published var isLogging = false
+
+    func quickLog(_ category: String, text: String) async {
+        isLogging = true
+        let body = QuickLogBody(
+            category: category, text: text,
+            logged_at: ISO8601DateFormatter().string(from: Date()),
+            metadata: nil)
+        _ = try? await API.shared.post("/api/watch/quick-log", body: body, as: QuickLogResult.self)
+        loggedCategory = category
+        try? await Task.sleep(nanoseconds: 1_500_000_000)
+        loggedCategory = nil
+        isLogging = false
+    }
+}
+
 struct CaptureView: View {
-    @State private var loggedCategory: String? = nil
+    @StateObject private var model = CaptureModel()
     @State private var showVoice = false
-    @State private var isLogging = false
 
     private let quickItems: [(String, String, Color)] = [
         ("💧 Water",      "water",         Tokens.C.cool),
@@ -25,14 +46,14 @@ struct CaptureView: View {
                 LazyVGrid(columns: cols, spacing: Tokens.S.gutter) {
                     ForEach(quickItems, id: \.0) { item in
                         Button {
-                            Task { await quickLog(item.1, text: item.0) }
+                            Task { await model.quickLog(item.1, text: item.0) }
                         } label: {
                             VStack(spacing: 4) {
                                 Text(item.0)
                                     .font(Type.body)
                                     .foregroundStyle(item.2)
                                     .multilineTextAlignment(.center)
-                                if loggedCategory == item.1 {
+                                if model.loggedCategory == item.1 {
                                     Image(systemName: "checkmark")
                                         .foregroundStyle(Tokens.C.good)
                                         .font(.caption)
@@ -40,13 +61,13 @@ struct CaptureView: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding(10)
-                            .background(loggedCategory == item.1
+                            .background(model.loggedCategory == item.1
                                 ? Tokens.C.good.opacity(0.15)
                                 : Tokens.C.card)
                             .clipShape(RoundedRectangle(cornerRadius: Tokens.S.cardRadius))
                         }
                         .buttonStyle(.plain)
-                        .disabled(isLogging)
+                        .disabled(model.isLogging)
                     }
                 }
                 Button {
@@ -67,20 +88,6 @@ struct CaptureView: View {
             .padding(Tokens.S.gutter)
         }
         .background(Tokens.C.bg)
-    }
-
-    private func quickLog(_ category: String, text: String) async {
-        isLogging = true
-        struct Body: Encodable { let category: String; let text: String; let logged_at: String }
-        struct Result: Decodable { let id: String? }
-        let body = Body(category: category, text: text,
-                        logged_at: ISO8601DateFormatter().string(from: Date()))
-        _ = try? await API.shared.post("/api/watch/quick-log", body: body, as: Result.self)
-        loggedCategory = category
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            loggedCategory = nil
-            isLogging = false
-        }
     }
 }
 
