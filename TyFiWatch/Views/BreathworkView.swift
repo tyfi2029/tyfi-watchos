@@ -1,23 +1,27 @@
 import SwiftUI
 
-/// Breathwork -- 4-7-8 cadence engine (watch-side) with HKWorkoutSession for live HR capture.
-/// API session records the exercise; HealthKit captures the heart rate data.
-/// HR overlay uses the shared HealthKitManager.shared instance.
 enum BreathPhase: String {
-    case idle = "Tap to begin"
-    case inhale = "Inhale"
-    case hold = "Hold"
-    case exhale = "Exhale"
-    var seconds: Int { switch self { case .inhale: 4; case .hold: 7; case .exhale: 8; case .idle: 0 } }
-    var scale: CGFloat { switch self { case .inhale, .hold: 1.0; case .exhale, .idle: 0.55 } }
+    case idle    = "Tap to begin"
+    case inhale  = "INHALE"
+    case hold    = "HOLD"
+    case exhale  = "EXHALE"
+    var seconds: Int {
+        switch self { case .inhale: 4; case .hold: 7; case .exhale: 8; case .idle: 0 }
+    }
+    var orbScale: CGFloat {
+        switch self { case .inhale, .hold: 1.0; case .exhale, .idle: 0.55 }
+    }
+    var orbDuration: Double {
+        switch self { case .inhale: 4; case .hold: 7; case .exhale: 8; case .idle: 5 }
+    }
 }
 
 @MainActor
 final class BreathModel: ObservableObject {
     @Published var phase: BreathPhase = .idle
-    @Published var remaining = 0
-    @Published var cycle = 0
-    @Published var running = false
+    @Published var remaining  = 0
+    @Published var cycle      = 0
+    @Published var running    = false
     @Published var error: String?
 
     let targetCycles = 4
@@ -26,8 +30,7 @@ final class BreathModel: ObservableObject {
     private var timer: Timer?
 
     func start() async {
-        cycle = 0
-        startedAt = Date()
+        cycle = 0; startedAt = Date()
         await HealthKitManager.shared.requestAuth()
         await HealthKitManager.shared.startBreathworkSession()
         do {
@@ -39,7 +42,7 @@ final class BreathModel: ObservableObject {
                                   pre_hrv_deviation: nil, pre_stress_tier: nil),
                 as: BreathStartResult.self)
             sessionId = res.session?.session_id
-            self.error = nil
+            error = nil
         } catch { self.error = "Record offline" }
         running = true
         advance(.inhale)
@@ -53,14 +56,12 @@ final class BreathModel: ObservableObject {
         let _ = await HealthKitManager.shared.stopBreathworkSession()
         guard let sid = sessionId else { return }
         let dur = startedAt.map { Int(Date().timeIntervalSince($0)) }
-        do {
-            _ = try await API.shared.post(
-                "/api/watch/breath",
-                body: BreathEnd(session_id: sid, actual_duration_seconds: dur,
-                                post_hrv_deviation: nil, post_stress_tier: nil,
-                                effectiveness_score: nil),
-                as: BreathStartResult.self)
-        } catch { self.error = "End failed" }
+        _ = try? await API.shared.post(
+            "/api/watch/breath",
+            body: BreathEnd(session_id: sid, actual_duration_seconds: dur,
+                            post_hrv_deviation: nil, post_stress_tier: nil,
+                            effectiveness_score: nil),
+            as: BreathStartResult.self)
         sessionId = nil
     }
 
@@ -69,83 +70,134 @@ final class BreathModel: ObservableObject {
         if remaining > 0 { return }
         switch phase {
         case .inhale: advance(.hold)
-        case .hold: advance(.exhale)
+        case .hold:   advance(.exhale)
         case .exhale:
             cycle += 1
             if cycle >= targetCycles { Task { await stop() } } else { advance(.inhale) }
         case .idle: break
         }
     }
-
     private func advance(_ p: BreathPhase) { phase = p; remaining = p.seconds }
 }
 
+/// Screen 22 — Breathwork.
+/// Layout: title → animated breathing orb (scale inhale↔exhale) → phase label →
+///         live HR readout → cycle counter → pause/resume pill.
 struct BreathworkView: View {
     @StateObject private var model = BreathModel()
     @ObservedObject private var hk = HealthKitManager.shared
 
     var body: some View {
-        VStack(spacing: Tokens.S.gutter) {
-            Text("4-7-8 BREATH").font(Type.label).foregroundStyle(Tokens.C.ink3)
+        VStack(spacing: 0) {
+            // Title
+            HStack {
+                Text("4·7·8 BREATH")
+                    .font(.system(size: 13, weight: .medium))
+                    .tracking(2.0)
+                    .foregroundStyle(Tokens.C.ink3)
+                Spacer()
+                if model.running {
+                    Text("\(model.cycle + 1)/\(model.targetCycles)")
+                        .font(.system(size: 13).monospacedDigit())
+                        .foregroundStyle(Tokens.C.ink3)
+                }
+            }
+            .padding(.horizontal, Tokens.S.hPad)
+            .padding(.top, 16)
+            .padding(.bottom, 8)
+
+            Spacer()
+
+            // Breathing orb
             ZStack {
-                Circle().fill(Tokens.C.accent.opacity(0.18))
-                    .frame(width: 130, height: 130)
-                    .scaleEffect(model.phase.scale)
-                    .animation(.easeInOut(duration: Double(max(1, model.phase.seconds))), value: model.phase)
-                VStack(spacing: 2) {
-                    Text(model.phase.rawValue).font(Type.title).foregroundStyle(Tokens.C.ink)
+                Circle()
+                    .fill(Tokens.C.accent.opacity(0.18))
+                    .frame(width: 140, height: 140)
+                    .scaleEffect(model.running ? model.phase.orbScale : 0.66)
+                    .animation(
+                        model.running
+                            ? .easeInOut(duration: model.phase.orbDuration)
+                            : .easeInOut(duration: 5.0).repeatForever(autoreverses: true),
+                        value: model.phase)
+                    .overlay(
+                        Circle()
+                            .stroke(Tokens.C.accent.opacity(0.35), lineWidth: 1.5)
+                            .scaleEffect(model.running ? model.phase.orbScale : 0.66)
+                            .animation(
+                                model.running
+                                    ? .easeInOut(duration: model.phase.orbDuration)
+                                    : .easeInOut(duration: 5.0).repeatForever(autoreverses: true),
+                                value: model.phase)
+                    )
+
+                VStack(spacing: 4) {
                     if model.running {
-                        Text("\(model.remaining)").font(Type.metric(28)).foregroundStyle(Tokens.C.accent)
-                        Text("cycle \(model.cycle + 1)/\(model.targetCycles)")
-                            .font(Type.caption).foregroundStyle(Tokens.C.ink3)
-                    }
-                }
-            }
-            .frame(height: 150)
-
-            Button(model.running ? "Stop" : "Begin") {
-                Task { model.running ? await model.stop() : await model.start() }
-            }
-            .font(Type.label)
-            .tint(model.running ? Tokens.C.bad : Tokens.C.good)
-
-            // Live HR overlay -- shown during active breath session
-            if model.running {
-                HStack(spacing: 4) {
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 10))
-                        .foregroundStyle(hrColor)
-                    if let hr = hk.heartRate {
-                        Text("\(Int(hr)) bpm")
-                            .font(Type.caption)
-                            .monospacedDigit()
-                            .foregroundStyle(hrColor)
+                        Text(model.phase.rawValue)
+                            .font(.system(size: 16, weight: .semibold))
+                            .tracking(1.5)
+                            .foregroundStyle(Tokens.C.ink2)
+                        Text("\(model.remaining)")
+                            .font(.system(size: 34, weight: .semibold).monospacedDigit())
+                            .foregroundStyle(Tokens.C.accent)
                     } else {
-                        Text("— bpm")
-                            .font(Type.caption)
-                            .monospacedDigit()
-                            .foregroundStyle(Tokens.C.ink3)
+                        Text(model.phase.rawValue)
+                            .font(.system(size: 15))
+                            .foregroundStyle(Tokens.C.ink2)
                     }
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .background(Tokens.C.card)
-                .clipShape(Capsule())
             }
+            .frame(height: 160)
 
-            if let e = model.error { Text(e).font(Type.caption).foregroundStyle(Tokens.C.ink3) }
+            Spacer()
+
+            VStack(spacing: 14) {
+                // Live HR
+                if model.running {
+                    HStack(spacing: 6) {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(Tokens.C.bad)
+                        if let hr = hk.heartRate {
+                            Text("\(Int(hr)) bpm")
+                                .font(.system(size: 15).monospacedDigit())
+                                .foregroundStyle(Tokens.C.bad)
+                        } else {
+                            Text("— bpm")
+                                .font(.system(size: 15).monospacedDigit())
+                                .foregroundStyle(Tokens.C.ink3)
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(Tokens.C.card, in: Capsule())
+                }
+
+                // Start / Stop pill
+                Button {
+                    Task { model.running ? await model.stop() : await model.start() }
+                } label: {
+                    Text(model.running ? "Pause" : "Begin")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(model.running ? Tokens.C.bad : Tokens.C.good)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: Tokens.S.tapH)
+                        .background(
+                            model.running ? Tokens.C.bad.opacity(0.16) : Tokens.C.good.opacity(0.16),
+                            in: RoundedRectangle(cornerRadius: Tokens.S.pillRadius))
+                }
+                .buttonStyle(.plain)
+                .pressScale()
+
+                if let e = model.error {
+                    Text(e).font(Type.caption).foregroundStyle(Tokens.C.ink3)
+                }
+            }
+            .padding(.horizontal, Tokens.S.hPad)
+            .padding(.bottom, 20)
         }
-        .padding(.horizontal, 6)
         .frame(maxHeight: .infinity)
         .background(Tokens.C.bg)
         .task { await HealthKitManager.shared.requestAuth() }
-    }
-
-    private var hrColor: Color {
-        guard let hr = hk.heartRate else { return Tokens.C.ink3 }
-        if hr > 170 { return Tokens.C.bad }
-        if hr > 150 { return Tokens.C.warn }
-        return Tokens.C.good
     }
 }
 
