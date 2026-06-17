@@ -22,6 +22,7 @@ final class SessionModel: ObservableObject {
     @Published var elapsed = 0
     @Published var sessionDone = false
     @Published var serverSessionId: Int?
+    @Published var hrPeak: Double?
 
     private var ticker: Timer?
 
@@ -33,8 +34,9 @@ final class SessionModel: ObservableObject {
     }
 
     func start() async {
-        elapsed = 0; running = true; sessionDone = false
+        elapsed = 0; running = true; sessionDone = false; hrPeak = nil
         await HealthKitManager.shared.requestAuth()
+        HealthKitManager.shared.start()   // begin live HR/HRV stream for the overlay
         let body = SessionStartBody(mode: mode.rawValue.lowercased(),
             temp_f: tempF, target_sec: mode.target,
             started_at: ISO8601DateFormatter().string(from: Date()),
@@ -45,6 +47,9 @@ final class SessionModel: ObservableObject {
         ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             Task { @MainActor in
                 self.elapsed += 1
+                if let hr = HealthKitManager.shared.heartRate {
+                    self.hrPeak = max(self.hrPeak ?? 0, hr)
+                }
                 if self.mode == .cold && self.elapsed >= self.mode.target {
                     await self.finish()
                 }
@@ -58,13 +63,17 @@ final class SessionModel: ObservableObject {
             let body = SessionEndBody(session_id: sid, elapsed_sec: elapsed,
                 ended_at: ISO8601DateFormatter().string(from: Date()),
                 hr_avg: HealthKitManager.shared.heartRate,
-                hr_peak: nil, completion_status: "completed")
+                hr_peak: hrPeak, completion_status: "completed")
             _ = try? await API.shared.post("/api/watch/session/end", body: body, as: SessionEndResult.self)
         }
+        HealthKitManager.shared.stop()
         await load()
     }
 
-    func reset() { ticker?.invalidate(); running = false; elapsed = 0; sessionDone = false }
+    func reset() {
+        ticker?.invalidate(); running = false; elapsed = 0; sessionDone = false
+        HealthKitManager.shared.stop()
+    }
 }
 
 /// Screen 7 — Session Timer.
@@ -73,6 +82,7 @@ struct SessionTimerView: View {
     @StateObject private var model = SessionModel()
     @ObservedObject private var hk = HealthKitManager.shared
     @EnvironmentObject var units: Units
+    @State private var heartPulse = false
 
     private var displayTime: String {
         if model.mode == .cold {
@@ -270,12 +280,12 @@ struct SessionTimerView: View {
             Image(systemName: "heart.fill")
                 .font(.system(size: 22))
                 .foregroundStyle(Tokens.C.bad)
-                .scaleEffect(model.running ? 1.0 : 1.0)
+                .scaleEffect(heartPulse ? 1.14 : 1.0)
                 .animation(
-                    model.running
-                        ? .easeInOut(duration: 1.0).repeatForever(autoreverses: true)
-                        : .default,
-                    value: model.running)
+                    .easeInOut(duration: 1.0).repeatForever(autoreverses: true),
+                    value: heartPulse)
+                .onAppear { heartPulse = true }
+                .onDisappear { heartPulse = false }
             if let hr = hk.heartRate {
                 Text("\(Int(hr))")
                     .font(.system(size: 34, weight: .semibold).monospacedDigit())
@@ -289,9 +299,16 @@ struct SessionTimerView: View {
                 .font(.system(size: 13))
                 .foregroundStyle(Tokens.C.ink3)
             Spacer()
-            Text(units.temp(model.tempF))
-                .font(.system(size: 14, weight: .semibold).monospacedDigit())
-                .foregroundStyle(model.mode.color)
+            VStack(alignment: .trailing, spacing: 1) {
+                if let peak = model.hrPeak {
+                    Text("peak \(Int(peak))")
+                        .font(.system(size: 11).monospacedDigit())
+                        .foregroundStyle(Tokens.C.ink3)
+                }
+                Text(units.temp(model.tempF))
+                    .font(.system(size: 14, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(model.mode.color)
+            }
         }
         .frame(maxWidth: .infinity)
     }
