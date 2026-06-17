@@ -33,6 +33,7 @@ final class BreathModel: ObservableObject {
         cycle = 0; startedAt = Date()
         await HealthKitManager.shared.requestAuth()
         await HealthKitManager.shared.startBreathworkSession()
+        HealthKitManager.shared.start()   // anchored HR stream feeds the live readout
         do {
             let res = try await API.shared.post(
                 "/api/watch/breath",
@@ -53,6 +54,7 @@ final class BreathModel: ObservableObject {
 
     func stop() async {
         timer?.invalidate(); running = false; phase = .idle
+        HealthKitManager.shared.stop()
         let _ = await HealthKitManager.shared.stopBreathworkSession()
         guard let sid = sessionId else { return }
         let dur = startedAt.map { Int(Date().timeIntervalSince($0)) }
