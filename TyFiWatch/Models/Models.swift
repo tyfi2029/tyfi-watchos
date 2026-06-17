@@ -504,3 +504,15 @@ struct QuickLogResult: Decodable, Sendable {
     let logged_at: String?
     let category: String?
 }
+// MARK: /api/watch/capture/voice  (POST body — CaptureBody)
+// Required fields: transcript, idempotency_key. Optional: category_hint, captured_at, metadata.
+// NOTE: VoiceCaptureBody (above) is the legacy struct with tags/duration/audio; CaptureBody is
+// the frozen Wave C contract body used by CaptureView and VoiceNoteView.
+struct CaptureBody: Encodable, Sendable {
+    var transcript: String
+    var idempotency_key: String
+    var category_hint: String?
+    var captured_at: String?
+    var metadata: [String: String]?
+}
+
