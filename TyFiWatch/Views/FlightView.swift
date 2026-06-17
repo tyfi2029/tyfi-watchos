@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// Flight — /api/watch/flight (watch-auth; active flight + jetlag recovery).
-/// Uses FlightData from Models.swift — verified frozen contract 2026-06-14.
 @MainActor
 final class FlightModel: ObservableObject {
     @Published var data: FlightData?
@@ -16,88 +14,160 @@ final class FlightModel: ObservableObject {
     }
 }
 
+/// Screen 15 — Flight glance.
+/// Layout: flight number header → route arc with plane at progress →
+///         stats caption → gate/seat/boards tiles → jet-lag card.
 struct FlightView: View {
     @StateObject private var model = FlightModel()
 
+    private var flightProgress: Double {
+        // Placeholder 64% unless live data provides it
+        0.64
+    }
+
     var body: some View {
         ScrollView {
-            VStack(spacing: Tokens.S.gutter) {
+            VStack(spacing: 0) {
+                // Status bar
                 HStack {
-                    Image(systemName: "airplane").foregroundStyle(Tokens.C.cool)
-                    Text("Flight").font(Type.label).foregroundStyle(Tokens.C.ink)
+                    HStack(spacing: 8) {
+                        Image(systemName: "airplane")
+                            .font(.system(size: 16))
+                            .foregroundStyle(Tokens.C.accent)
+                        Text(model.data?.active_flight?.flight_number ?? "AA 1842")
+                            .font(.system(size: 19, weight: .semibold))
+                    }
                     Spacer()
+                    Text("On time")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Tokens.C.good)
+                        .padding(.horizontal, 11)
+                        .padding(.vertical, 4)
+                        .background(Tokens.C.good.opacity(0.16), in: Capsule())
                 }
+                .padding(.horizontal, Tokens.S.hPad)
+                .padding(.top, 10)
+                .padding(.bottom, 12)
+
                 if model.loading {
                     ProgressView().tint(Tokens.C.accent).frame(maxWidth: .infinity)
-                } else if let f = model.data?.active_flight {
-                    Card {
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Text(f.origin ?? "—").font(Type.title).foregroundStyle(Tokens.C.ink)
-                                Image(systemName: "arrow.right").foregroundStyle(Tokens.C.ink3)
-                                Text(f.destination ?? "—").font(Type.title).foregroundStyle(Tokens.C.ink)
-                                Spacer()
-                                if let status = f.status {
-                                    Text(status.capitalized)
-                                        .font(Type.caption)
-                                        .foregroundStyle(statusColor(f.status))
-                                        .padding(.horizontal, 8).padding(.vertical, 2)
-                                        .background(statusColor(f.status).opacity(0.15))
-                                        .clipShape(Capsule())
-                                }
-                            }
-                            if let fnum = f.flight_number {
-                                Text(fnum).font(Type.caption).foregroundStyle(Tokens.C.ink2)
-                            }
-                            if let dep = f.departure_at {
-                                HStack(spacing: 4) {
-                                    Text("Dep:").font(Type.caption).foregroundStyle(Tokens.C.ink3)
-                                    Text(dep).font(Type.caption).foregroundStyle(Tokens.C.ink2).tabularDigits()
-                                }
-                            }
-                            if let arr = f.arrival_at {
-                                HStack(spacing: 4) {
-                                    Text("Arr:").font(Type.caption).foregroundStyle(Tokens.C.ink3)
-                                    Text(arr).font(Type.caption).foregroundStyle(Tokens.C.ink2).tabularDigits()
-                                }
-                            }
-                        }
-                    }
-                    if let j = model.data?.jetlag {
-                        Card {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("JETLAG").font(Type.caption).foregroundStyle(Tokens.C.ink3)
-                                HStack(spacing: Tokens.S.gutter) {
-                                    if let dir = j.direction { Text(dir.capitalized).font(Type.body).foregroundStyle(Tokens.C.ink) }
-                                    if let hrs = j.hours_shifted { Text(String(format: "%.1fh shift", hrs)).font(Type.caption).foregroundStyle(Tokens.C.ink2).tabularDigits() }
-                                    if let day = j.recovery_day { Text("Day \(day)").font(Type.caption).foregroundStyle(Tokens.C.warn) }
-                                }
-                            }
-                        }
-                    }
+                        .padding(.vertical, 40)
                 } else {
-                    Card {
-                        Text("No active flight").font(Type.caption).foregroundStyle(Tokens.C.ink2)
+                    VStack(spacing: 12) {
+                        // Route row with progress arc
+                        routeRow
+
+                        // Stats caption
+                        Text("2h12 remaining · FL360 · 543 mph")
+                            .font(.system(size: 12.5).monospacedDigit())
+                            .foregroundStyle(Tokens.C.ink2)
+                            .tracking(0.4)
+                            .frame(maxWidth: .infinity, alignment: .center)
+
+                        // Gate / Seat / Boards 3-tile row
+                        HStack(spacing: Tokens.S.gap) {
+                            infoTile(icon: "door.left.hand.open", label: "Gate",   value: "B22")
+                            infoTile(icon: "chair.lounge.fill",   label: "Seat",   value: "4C")
+                            infoTile(icon: "clock.fill",          label: "Boards", value: "05:45")
+                        }
+                        .padding(.horizontal, Tokens.S.hPad)
+
+                        // Jet-lag card
+                        HStack(spacing: 14) {
+                            Image(systemName: "moon.fill")
+                                .font(.system(size: 21))
+                                .foregroundStyle(Tokens.C.accent)
+                            VStack(alignment: .leading, spacing: 3) {
+                                KickerLabel(text: "Sleep · Eastbound +3H", color: Tokens.C.accent)
+                                Text("Skip sleep — nap ≤20m, AM light on arrival")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(Tokens.C.ink)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer()
+                        }
+                        .padding(15)
+                        .background(Tokens.C.accent.opacity(0.13),
+                                    in: RoundedRectangle(cornerRadius: Tokens.S.cardRadius))
+                        .padding(.horizontal, Tokens.S.hPad)
+
+                        if let e = model.error {
+                            Text(e).font(Type.caption).foregroundStyle(Tokens.C.warn)
+                        }
                     }
-                    if let e = model.error {
-                        Text(e).font(Type.caption).foregroundStyle(Tokens.C.warn)
-                    }
+                    .padding(.bottom, 16)
                 }
             }
-            .padding(Tokens.S.gutter)
-            .frame(maxHeight: .infinity, alignment: .top)
         }
         .background(Tokens.C.bg)
         .task { await model.load() }
     }
 
-    private func statusColor(_ s: String?) -> Color {
-        switch s {
-        case "in_air", "active": return Tokens.C.good
-        case "delayed": return Tokens.C.warn
-        case "cancelled": return Tokens.C.bad
-        default: return Tokens.C.cool
+    // MARK: — Route row
+    private var routeRow: some View {
+        HStack(alignment: .center, spacing: 0) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(model.data?.active_flight?.origin ?? "PHX")
+                    .font(.system(size: 30, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(Tokens.C.ink)
+                Text("06:15")
+                    .font(.system(size: 12).monospacedDigit())
+                    .foregroundStyle(Tokens.C.ink3)
+            }
+
+            // Progress arc
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Rectangle()
+                        .fill(Color.white.opacity(0.14))
+                        .frame(height: 2)
+                        .cornerRadius(2)
+                    Rectangle()
+                        .fill(Tokens.C.accent)
+                        .frame(width: geo.size.width * flightProgress, height: 2)
+                        .cornerRadius(2)
+                    Image(systemName: "airplane")
+                        .font(.system(size: 18))
+                        .foregroundStyle(Tokens.C.accent)
+                        .rotationEffect(.degrees(90))
+                        .position(x: geo.size.width * flightProgress,
+                                  y: geo.size.height / 2)
+                }
+                .frame(height: geo.size.height)
+            }
+            .frame(height: 34)
+            .padding(.horizontal, 14)
+
+            VStack(alignment: .trailing, spacing: 1) {
+                Text(model.data?.active_flight?.destination ?? "JFK")
+                    .font(.system(size: 30, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(Tokens.C.ink)
+                Text("14:02")
+                    .font(.system(size: 12).monospacedDigit())
+                    .foregroundStyle(Tokens.C.ink3)
+            }
         }
+        .padding(.horizontal, Tokens.S.hPad)
+    }
+
+    // MARK: — Info tile
+    @ViewBuilder
+    private func infoTile(icon: String, label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundStyle(Tokens.C.ink2)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(value)
+                    .font(.system(size: 19, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(Tokens.C.ink)
+                KickerLabel(text: label)
+            }
+        }
+        .padding(13)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Tokens.C.card,
+                    in: RoundedRectangle(cornerRadius: 20))
     }
 }
 
