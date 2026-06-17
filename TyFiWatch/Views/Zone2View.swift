@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Zone 2 — /api/watch/zone2 (watch-auth; weekly Zone 2 progress + recent sessions).
-/// Uses Zone2Data from Models.swift — verified frozen contract 2026-06-14.
+/// Zone 2 -- /api/watch/zone2 (watch-auth; weekly Zone 2 progress + recent sessions).
+/// Uses Zone2Data from Models.swift -- verified frozen contract 2026-06-14.
+/// Live HR banner shown at top when the stopwatch session is active (hk.heartRate != nil).
 @MainActor
 final class Zone2Model: ObservableObject {
     @Published var data: Zone2Data?
@@ -18,6 +19,7 @@ final class Zone2Model: ObservableObject {
 
 struct Zone2View: View {
     @StateObject private var model = Zone2Model()
+    @ObservedObject private var hk = HealthKitManager.shared
 
     var body: some View {
         ScrollView {
@@ -29,6 +31,11 @@ struct Zone2View: View {
                         .font(Type.label)
                         .foregroundStyle(Tokens.C.ink)
                     Spacer()
+                }
+
+                // Live HR + zone banner (shown when a reading is available)
+                if let hr = hk.heartRate {
+                    liveHRBanner(hr: hr)
                 }
 
                 if model.loading {
@@ -86,6 +93,7 @@ struct Zone2View: View {
                                 if let hr = s.avg_hr {
                                     Text("\(Int(hr)) bpm")
                                         .font(Type.caption)
+                                        .monospacedDigit()
                                         .foregroundStyle(Tokens.C.bad)
                                 }
                             }
@@ -102,6 +110,71 @@ struct Zone2View: View {
         }
         .background(Tokens.C.bg)
         .task { await model.load() }
+    }
+
+    // MARK: - Live HR banner
+
+    @ViewBuilder
+    private func liveHRBanner(hr: Double) -> some View {
+        let zone = hrZone(hr)
+        HStack(spacing: 6) {
+            Image(systemName: "heart.fill")
+                .font(.system(size: 11))
+                .foregroundStyle(zoneColor(zone))
+            Text("\(Int(hr)) bpm")
+                .font(Type.body)
+                .monospacedDigit()
+                .foregroundStyle(zoneColor(zone))
+            Spacer()
+            Text(zone.label)
+                .font(Type.caption)
+                .foregroundStyle(zoneColor(zone))
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(zoneColor(zone).opacity(0.18))
+                .clipShape(Capsule())
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(Tokens.C.card)
+        .clipShape(RoundedRectangle(cornerRadius: Tokens.S.cardRadius))
+    }
+
+    // MARK: - Zone calculation (5-zone model, max HR = 180)
+
+    private enum HRZone {
+        case z1, z2, z3, z4, z5
+        var label: String {
+            switch self {
+            case .z1: return "Z1 Recovery"
+            case .z2: return "Z2 Aerobic"
+            case .z3: return "Z3 Tempo"
+            case .z4: return "Z4 Threshold"
+            case .z5: return "Z5 Max"
+            }
+        }
+    }
+
+    private func hrZone(_ hr: Double) -> HRZone {
+        let max: Double = 180
+        let pct = hr / max
+        switch pct {
+        case ..<0.60: return .z1
+        case 0.60..<0.70: return .z2
+        case 0.70..<0.80: return .z3
+        case 0.80..<0.90: return .z4
+        default: return .z5
+        }
+    }
+
+    private func zoneColor(_ z: HRZone) -> Color {
+        switch z {
+        case .z1: return Tokens.C.ink2
+        case .z2: return Tokens.C.good
+        case .z3: return Tokens.C.accent
+        case .z4: return Tokens.C.warn
+        case .z5: return Tokens.C.bad
+        }
     }
 }
 
