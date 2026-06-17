@@ -125,7 +125,7 @@ struct ProtocolView: View {
 
     @ViewBuilder
     private func segmentPage(_ seg: ProtocolSegment) -> some View {
-        let done  = seg.items.filter({\.done}).count
+        let done  = seg.items.filter({ $0.done }).count
         let total = seg.items.count
         let pct   = total > 0 ? Double(done) / Double(total) : 0.0
 
