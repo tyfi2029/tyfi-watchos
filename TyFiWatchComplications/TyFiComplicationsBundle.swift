@@ -85,13 +85,16 @@ struct TyFiEntry: TimelineEntry {
 
 private final class WatchAuthStore: @unchecked Sendable {
     static let shared = WatchAuthStore()
+    // Must match the keychain-access-groups entitlement shared between the app and this extension.
+    private let accessGroup = "E5HE9TGHFQ.fyi.tyfi.watch.shared"
     var token: String? {
         let q: [String: Any] = [
-            kSecClass as String:       kSecClassGenericPassword,
-            kSecAttrService as String: "fyi.tyfi.watch",
-            kSecAttrAccount as String: "bearerToken",
-            kSecReturnData as String:  true,
-            kSecMatchLimit as String:  kSecMatchLimitOne,
+            kSecClass as String:            kSecClassGenericPassword,
+            kSecAttrService as String:      "fyi.tyfi.watch",
+            kSecAttrAccount as String:      "bearerToken",
+            kSecAttrAccessGroup as String:  accessGroup,
+            kSecReturnData as String:       true,
+            kSecMatchLimit as String:       kSecMatchLimitOne,
         ]
         var result: AnyObject?
         SecItemCopyMatching(q as CFDictionary, &result)
