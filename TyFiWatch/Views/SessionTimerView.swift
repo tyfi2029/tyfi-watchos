@@ -1,9 +1,8 @@
 import SwiftUI
 
 /// Session timer — recent thermal/recovery sessions from /api/watch/session
-/// (watch-auth read of health_thermal_sessions) plus a local stopwatch. The
-/// watch is an additional manual source; auto-detect needs an external temp
-/// sensor the Watch cannot provide (flagged — see gap re-audit).
+/// (watch-auth read of health_thermal_sessions) plus a local stopwatch.
+/// Live HR badge shown while stopwatch is running.
 @MainActor
 final class SessionModel: ObservableObject {
     @Published var list: SessionList?
@@ -20,6 +19,7 @@ final class SessionModel: ObservableObject {
 
 struct SessionTimerView: View {
     @StateObject private var model = SessionModel()
+    @ObservedObject private var hk = HealthKitManager.shared
     @EnvironmentObject var units: Units
     @State private var running = false
     @State private var elapsed = 0
@@ -54,14 +54,46 @@ struct SessionTimerView: View {
 
     private var stopwatch: some View {
         Card {
-            HStack {
-                Text(clock(elapsed)).font(Type.metric(30)).foregroundStyle(running ? Tokens.C.good : Tokens.C.ink)
-                Spacer()
-                Button(running ? "Stop" : "Start") { toggle() }
-                    .font(Type.label)
-                    .tint(running ? Tokens.C.bad : Tokens.C.good)
+            VStack(spacing: 4) {
+                HStack {
+                    Text(clock(elapsed))
+                        .font(Type.metric(30))
+                        .monospacedDigit()
+                        .foregroundStyle(running ? Tokens.C.good : Tokens.C.ink)
+                    Spacer()
+                    Button(running ? "Stop" : "Start") { toggle() }
+                        .font(Type.label)
+                        .tint(running ? Tokens.C.bad : Tokens.C.good)
+                }
+                // Live HR badge — visible only while session is running
+                if running {
+                    HStack(spacing: 4) {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(hrBadgeColor)
+                        if let hr = hk.heartRate {
+                            Text("\(Int(hr)) bpm")
+                                .font(Type.caption)
+                                .monospacedDigit()
+                                .foregroundStyle(hrBadgeColor)
+                        } else {
+                            Text("— bpm")
+                                .font(Type.caption)
+                                .monospacedDigit()
+                                .foregroundStyle(Tokens.C.ink3)
+                        }
+                        Spacer()
+                    }
+                }
             }
         }
+    }
+
+    private var hrBadgeColor: Color {
+        guard let hr = hk.heartRate else { return Tokens.C.ink3 }
+        if hr > 170 { return Tokens.C.bad }
+        if hr > 150 { return Tokens.C.warn }
+        return Color(red: 0.878, green: 0.631, blue: 0.302) // #e0a14d
     }
 
     private func toggle() {
