@@ -24,7 +24,7 @@ jobs:
         set -o pipefail
         xcodebuild \
           -scheme TyFiWatch \
-          -destination 'platform=watchOS Simulator,name=Apple Watch Ultra 2 (49mm)' \
+          -destination 'generic/platform=watchOS Simulator' \
           -project TyFiWatch.xcodeproj \
           CODE_SIGNING_ALLOWED=NO \
           build \
