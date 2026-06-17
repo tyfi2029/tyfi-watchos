@@ -4,6 +4,7 @@ import SwiftUI
 /// Recording state: animated waveform (5 bars) + elapsed timer + stop button.
 /// Review state: transcript card + tag pills + Save / Re-record.
 struct VoiceNoteView: View {
+    @Environment(\.dismiss) private var dismiss
     @State private var recording = false
     @State private var reviewing = false
     @State private var transcript = ""
@@ -196,6 +197,11 @@ struct VoiceNoteView: View {
         }
         .frame(maxHeight: .infinity)
         .background(Tokens.C.bg)
+        // Dismiss consistency: confirm briefly, then return to the caller.
+        .task {
+            try? await Task.sleep(for: .seconds(1.1))
+            dismiss()
+        }
     }
 
     // MARK: — Helpers
