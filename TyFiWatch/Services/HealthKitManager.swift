@@ -1,7 +1,7 @@
 import HealthKit
 import Foundation
 
-/// HealthKit wrapper for live sensor streaming (HR, HRV, SpO₂, skin temp,
+/// HealthKit wrapper for live sensor streaming (HR, HRV, SpO2, skin temp,
 /// active calories, steps) plus breathwork HKWorkoutSession.
 /// All @Published properties are updated on MainActor.
 @MainActor
@@ -12,12 +12,12 @@ final class HealthKitManager: ObservableObject {
     // MARK: - Published live values
     @Published var heartRate: Double?       // bpm
     @Published var hrv: Double?             // SDNN ms
-    @Published var spo2: Double?            // fraction 0–1
-    @Published var skinTempC: Double?       // °C, night-only, may be nil during day
+    @Published var spo2: Double?            // fraction 0-1
+    @Published var skinTempC: Double?       // deg C, night-only, may be nil during day
     @Published var activeCalories: Double?  // kcal today
     @Published var steps: Int?              // steps today
 
-    /// Legacy alias kept for binary compatibility with any caller using currentHR.
+    /// Legacy alias kept for any caller using currentHR.
     var currentHR: Double? { heartRate }
 
     @Published var authorized = false
@@ -31,7 +31,6 @@ final class HealthKitManager: ObservableObject {
     private var hrvQuery: HKAnchoredObjectQuery?
     private var spo2Query: HKAnchoredObjectQuery?
     private var stepsTimer: Timer?
-    private var calTimer: Timer?
 
     // MARK: - Auth
 
@@ -70,7 +69,6 @@ final class HealthKitManager: ObservableObject {
         refreshCalories()
         if #available(watchOS 9.0, *) { refreshSkinTemp() }
 
-        // Refresh cumulative stats every 60 s
         stepsTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.refreshSteps()
@@ -84,32 +82,26 @@ final class HealthKitManager: ObservableObject {
         hrvQuery.map { store.stop($0) }; hrvQuery = nil
         spo2Query.map { store.stop($0) }; spo2Query = nil
         stepsTimer?.invalidate(); stepsTimer = nil
-        calTimer?.invalidate(); calTimer = nil
     }
 
-    // MARK: - HR stream (HKAnchoredObjectQuery)
+    // MARK: - HR stream
 
     private func startHRStream() {
         let type = HKQuantityType(.heartRate)
         let query = HKAnchoredObjectQuery(
-            type: type,
-            predicate: nil,
-            anchor: nil,
-            limit: HKObjectQueryNoLimit
+            type: type, predicate: nil, anchor: nil, limit: HKObjectQueryNoLimit
         ) { [weak self] _, samples, _, _, _ in
-            self?.handleHRSamples(samples)
+            guard let s = (samples as? [HKQuantitySample])?.last else { return }
+            let bpm = s.quantity.doubleValue(for: HKUnit(from: "count/min"))
+            Task { @MainActor [weak self] in self?.heartRate = bpm }
         }
         query.updateHandler = { [weak self] _, samples, _, _, _ in
-            self?.handleHRSamples(samples)
+            guard let s = (samples as? [HKQuantitySample])?.last else { return }
+            let bpm = s.quantity.doubleValue(for: HKUnit(from: "count/min"))
+            Task { @MainActor [weak self] in self?.heartRate = bpm }
         }
         hrQuery = query
         store.execute(query)
-    }
-
-    private func handleHRSamples(_ samples: [HKSample]?) {
-        guard let s = (samples as? [HKQuantitySample])?.last else { return }
-        let bpm = s.quantity.doubleValue(for: .init(from: "count/min"))
-        Task { @MainActor [weak self] in self?.heartRate = bpm }
     }
 
     // MARK: - HRV stream
@@ -117,24 +109,19 @@ final class HealthKitManager: ObservableObject {
     private func startHRVStream() {
         let type = HKQuantityType(.heartRateVariabilitySDNN)
         let query = HKAnchoredObjectQuery(
-            type: type,
-            predicate: nil,
-            anchor: nil,
-            limit: HKObjectQueryNoLimit
+            type: type, predicate: nil, anchor: nil, limit: HKObjectQueryNoLimit
         ) { [weak self] _, samples, _, _, _ in
-            self?.handleHRVSamples(samples)
+            guard let s = (samples as? [HKQuantitySample])?.last else { return }
+            let ms = s.quantity.doubleValue(for: HKUnit(from: "ms"))
+            Task { @MainActor [weak self] in self?.hrv = ms }
         }
         query.updateHandler = { [weak self] _, samples, _, _, _ in
-            self?.handleHRVSamples(samples)
+            guard let s = (samples as? [HKQuantitySample])?.last else { return }
+            let ms = s.quantity.doubleValue(for: HKUnit(from: "ms"))
+            Task { @MainActor [weak self] in self?.hrv = ms }
         }
         hrvQuery = query
         store.execute(query)
-    }
-
-    private func handleHRVSamples(_ samples: [HKSample]?) {
-        guard let s = (samples as? [HKQuantitySample])?.last else { return }
-        let ms = s.quantity.doubleValue(for: .init(from: "ms"))
-        Task { @MainActor [weak self] in self?.hrv = ms }
     }
 
     // MARK: - SpO2 stream
@@ -142,24 +129,19 @@ final class HealthKitManager: ObservableObject {
     private func startSpo2Stream() {
         let type = HKQuantityType(.oxygenSaturation)
         let query = HKAnchoredObjectQuery(
-            type: type,
-            predicate: nil,
-            anchor: nil,
-            limit: HKObjectQueryNoLimit
+            type: type, predicate: nil, anchor: nil, limit: HKObjectQueryNoLimit
         ) { [weak self] _, samples, _, _, _ in
-            self?.handleSpo2Samples(samples)
+            guard let s = (samples as? [HKQuantitySample])?.last else { return }
+            let frac = s.quantity.doubleValue(for: .percent())
+            Task { @MainActor [weak self] in self?.spo2 = frac }
         }
         query.updateHandler = { [weak self] _, samples, _, _, _ in
-            self?.handleSpo2Samples(samples)
+            guard let s = (samples as? [HKQuantitySample])?.last else { return }
+            let frac = s.quantity.doubleValue(for: .percent())
+            Task { @MainActor [weak self] in self?.spo2 = frac }
         }
         spo2Query = query
         store.execute(query)
-    }
-
-    private func handleSpo2Samples(_ samples: [HKSample]?) {
-        guard let s = (samples as? [HKQuantitySample])?.last else { return }
-        let frac = s.quantity.doubleValue(for: .percent())
-        Task { @MainActor [weak self] in self?.spo2 = frac }
     }
 
     // MARK: - Steps today (cumulative)
@@ -169,9 +151,7 @@ final class HealthKitManager: ObservableObject {
         let start = Calendar.current.startOfDay(for: Date())
         let pred = HKQuery.predicateForSamples(withStart: start, end: nil)
         let q = HKStatisticsQuery(
-            quantityType: type,
-            quantitySamplePredicate: pred,
-            options: .cumulativeSum
+            quantityType: type, quantitySamplePredicate: pred, options: .cumulativeSum
         ) { [weak self] _, stats, _ in
             let v = stats?.sumQuantity()?.doubleValue(for: .count())
             Task { @MainActor [weak self] in self?.steps = v.map { Int($0) } }
@@ -186,9 +166,7 @@ final class HealthKitManager: ObservableObject {
         let start = Calendar.current.startOfDay(for: Date())
         let pred = HKQuery.predicateForSamples(withStart: start, end: nil)
         let q = HKStatisticsQuery(
-            quantityType: type,
-            quantitySamplePredicate: pred,
-            options: .cumulativeSum
+            quantityType: type, quantitySamplePredicate: pred, options: .cumulativeSum
         ) { [weak self] _, stats, _ in
             let v = stats?.sumQuantity()?.doubleValue(for: .kilocalorie())
             Task { @MainActor [weak self] in self?.activeCalories = v }
@@ -196,7 +174,7 @@ final class HealthKitManager: ObservableObject {
         store.execute(q)
     }
 
-    // MARK: - Skin temperature (most recent sleeping wrist temp -- night-only)
+    // MARK: - Skin temperature (most recent sleeping wrist temp - night-only)
 
     @available(watchOS 9.0, *)
     private func refreshSkinTemp() {
