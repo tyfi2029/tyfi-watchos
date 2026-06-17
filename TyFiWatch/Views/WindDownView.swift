@@ -1,24 +1,32 @@
 import SwiftUI
 
-struct WindDownView: View {
-    struct EightSleepStatus: Decodable {
-        let bedTempF: Double?
-        let targetTempF: Double?
-        let isOn: Bool?
-    }
-    struct ChecklistItem: Decodable, Identifiable {
-        let id: String
-        let label: String
-        var done: Bool
-    }
-    struct WindDownData: Decodable {
-        let eight_sleep: EightSleepStatus?
-        let checklist: [ChecklistItem]
+/// Wind Down — /api/watch/winddown (watch-auth; Eight Sleep temp + checklist).
+/// Uses WindDownData from Models.swift — verified frozen contract 2026-06-14.
+@MainActor
+final class WindDownModel: ObservableObject {
+    @Published var data: WindDownData?
+    @Published var checklist: [WindDownData.WindDownItem] = []
+    @Published var error: String?
+    @Published var loading = false
+
+    func load() async {
+        loading = true; defer { loading = false }
+        do {
+            data = try await API.shared.get("/api/watch/winddown", as: WindDownData.self)
+            checklist = data?.checklist ?? []
+            error = nil
+        } catch APIError.notAuthed { error = "Pair watch" }
+        catch { self.error = "Offline" }
     }
 
-    @State private var data: WindDownData?
-    @State private var checklist: [ChecklistItem] = []
-    @State private var isLoading = true
+    func setTemp(_ t: Double) async {
+        _ = try? await API.shared.post("/api/watch/winddown",
+            body: WindDownSetTempBody(temp_f: t), as: WindDownSetTempResult.self)
+    }
+}
+
+struct WindDownView: View {
+    @StateObject private var model = WindDownModel()
     @State private var targetTempF: Double = 65
 
     var body: some View {
@@ -29,10 +37,10 @@ struct WindDownView: View {
                     Text("Wind Down").font(Type.label).foregroundStyle(Tokens.C.ink)
                     Spacer()
                 }
-                if isLoading {
+                if model.loading {
                     ProgressView().tint(Tokens.C.accent).frame(maxWidth: .infinity)
                 } else {
-                    if let es = data?.eight_sleep {
+                    if let es = model.data?.eight_sleep {
                         Card {
                             VStack(alignment: .leading, spacing: 6) {
                                 HStack {
@@ -44,21 +52,27 @@ struct WindDownView: View {
                                 Slider(value: $targetTempF, in: 55...110, step: 1)
                                     .tint(Tokens.C.cool)
                                 Button("Set \(Int(targetTempF))°F") {
-                                    Task { await setTemp(targetTempF) }
+                                    Task { await model.setTemp(targetTempF) }
                                 }
                                 .font(Type.caption)
                                 .tint(Tokens.C.cool)
                             }
                         }
+                        .onAppear { targetTempF = es.targetTempF ?? 65 }
                     }
-                    ForEach($checklist) { $item in
+                    ForEach(model.checklist.indices, id: \.self) { i in
                         Button {
-                            item.done.toggle()
+                            let cur = model.checklist[i].done ?? false
+                            model.checklist[i] = WindDownData.WindDownItem(
+                                id: model.checklist[i].id,
+                                label: model.checklist[i].label,
+                                done: !cur)
                         } label: {
+                            let item = model.checklist[i]
                             HStack {
-                                Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(item.done ? Tokens.C.good : Tokens.C.ink3)
-                                Text(item.label).font(Type.body).foregroundStyle(Tokens.C.ink)
+                                Image(systemName: (item.done ?? false) ? "checkmark.circle.fill" : "circle")
+                                    .foregroundStyle((item.done ?? false) ? Tokens.C.good : Tokens.C.ink3)
+                                Text(item.label ?? "").font(Type.body).foregroundStyle(Tokens.C.ink)
                                 Spacer()
                             }
                             .padding(6)
@@ -67,28 +81,15 @@ struct WindDownView: View {
                         }
                         .buttonStyle(.plain)
                     }
+                    if let e = model.error {
+                        Text(e).font(Type.caption).foregroundStyle(Tokens.C.warn)
+                    }
                 }
             }
             .padding(Tokens.S.gutter)
         }
         .background(Tokens.C.bg)
-        .task { await load() }
-    }
-
-    private func load() async {
-        isLoading = true
-        do {
-            data = try await API.shared.get("/api/watch/winddown", as: WindDownData.self)
-            checklist = data?.checklist ?? []
-            targetTempF = data?.eight_sleep?.targetTempF ?? 65
-        } catch {}
-        isLoading = false
-    }
-
-    private func setTemp(_ t: Double) async {
-        struct SetTemp: Encodable { let action = "set_temp"; let temp_f: Double }
-        struct SetResult: Decodable { let set: Bool? }
-        _ = try? await API.shared.post("/api/watch/winddown", body: SetTemp(temp_f: t), as: SetResult.self)
+        .task { await model.load() }
     }
 }
 
