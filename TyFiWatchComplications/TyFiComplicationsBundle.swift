@@ -269,7 +269,7 @@ struct GlucoseView: View {
                 }
                 Spacer(minLength: 0)
                 Gauge(value: Double(g ?? 60), in: 60...200) {
-                    EmptyView()
+                    Text("")
                 }
                 .gaugeStyle(.accessoryLinearCapacity)
                 .tint(color)
@@ -278,7 +278,7 @@ struct GlucoseView: View {
 
         case .accessoryCircular:
             Gauge(value: Double(g ?? 60), in: 60...200) {
-                EmptyView()
+                Text("")
             } currentValueLabel: {
                 Text(gStr)
                     .font(.system(size: 14, weight: .semibold))
@@ -338,7 +338,7 @@ struct RecoveryView: View {
 
         case .accessoryCircular:
             Gauge(value: Double(r ?? 0), in: 0...100) {
-                EmptyView()
+                Text("")
             } currentValueLabel: {
                 Text(rStr)
                     .font(.system(size: 14, weight: .semibold))
@@ -349,7 +349,7 @@ struct RecoveryView: View {
                     .font(.system(size: 8))
                     .foregroundStyle(color)
             } maximumValueLabel: {
-                EmptyView()
+                Text("")
             }
             .gaugeStyle(.accessoryCircular)
             .tint(color)
@@ -359,7 +359,7 @@ struct RecoveryView: View {
                 .foregroundStyle(color)
                 .widgetLabel {
                     Gauge(value: Double(r ?? 0), in: 0...100) {
-                        EmptyView()
+                        Text("")
                     }
                     .gaugeStyle(.accessoryLinearCapacity)
                     .tint(color)
