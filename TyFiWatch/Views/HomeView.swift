@@ -1,17 +1,38 @@
 import SwiftUI
 
-struct HomeView: View {
-    struct Scene: Decodable, Identifiable {
-        let id: Int
-        let name: String
-        let label: String
-        let icon: String
-    }
-    struct HomeData: Decodable { let scenes: [Scene] }
+/// Home scenes — /api/watch/home (GET list) + POST to trigger a routine.
+/// Uses HomeData and HomeScene from Models.swift — verified frozen contract 2026-06-14.
+@MainActor
+final class HomeModel: ObservableObject {
+    @Published var scenes: [HomeScene] = []
+    @Published var error: String?
+    @Published var loading = false
+    @Published var triggered: Int? = nil
 
-    @State private var scenes: [Scene] = []
-    @State private var isLoading = true
-    @State private var triggered: Int? = nil
+    func load() async {
+        loading = true; defer { loading = false }
+        do {
+            let data = try await API.shared.get("/api/watch/home", as: HomeData.self)
+            scenes = data.scenes ?? []
+            error = nil
+        } catch APIError.notAuthed { error = "Pair watch" }
+        catch { self.error = "Offline" }
+    }
+
+    func trigger(_ s: HomeScene) async {
+        _ = try? await API.shared.post(
+            "/api/watch/home",
+            body: HomeTriggerBody(routine_id: s.id ?? 0),
+            as: HomeTriggerResult.self)
+        triggered = s.id
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            self.triggered = nil
+        }
+    }
+}
+
+struct HomeView: View {
+    @StateObject private var model = HomeModel()
 
     private let iconMap: [String: String] = [
         "house":     "house.fill",
@@ -34,25 +55,25 @@ struct HomeView: View {
                     Text("Home").font(Type.label).foregroundStyle(Tokens.C.ink)
                     Spacer()
                 }
-                if isLoading {
+                if model.loading {
                     ProgressView().tint(Tokens.C.accent).frame(maxWidth: .infinity)
-                } else if scenes.isEmpty {
+                } else if model.scenes.isEmpty {
                     Card {
-                        Text("No scenes configured").font(Type.caption).foregroundStyle(Tokens.C.ink2)
+                        Text(model.error ?? "No scenes configured").font(Type.caption).foregroundStyle(Tokens.C.ink2)
                     }
                 } else {
                     let cols = [GridItem(.flexible(), spacing: Tokens.S.gutter),
                                 GridItem(.flexible(), spacing: Tokens.S.gutter)]
                     LazyVGrid(columns: cols, spacing: Tokens.S.gutter) {
-                        ForEach(scenes) { s in
+                        ForEach(model.scenes) { s in
                             Button {
-                                Task { await trigger(s) }
+                                Task { await model.trigger(s) }
                             } label: {
                                 VStack(spacing: 4) {
-                                    Image(systemName: iconMap[s.icon] ?? "circle.fill")
+                                    Image(systemName: iconMap[s.icon ?? ""] ?? "circle.fill")
                                         .font(.system(size: 22))
-                                        .foregroundStyle(triggered == s.id ? Tokens.C.good : Tokens.C.warn)
-                                    Text(s.label)
+                                        .foregroundStyle(model.triggered == s.id ? Tokens.C.good : Tokens.C.warn)
+                                    Text(s.label ?? "")
                                         .font(Type.caption)
                                         .foregroundStyle(Tokens.C.ink)
                                         .multilineTextAlignment(.center)
@@ -60,7 +81,7 @@ struct HomeView: View {
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding(10)
-                                .background(triggered == s.id
+                                .background(model.triggered == s.id
                                     ? Tokens.C.good.opacity(0.15)
                                     : Tokens.C.card)
                                 .clipShape(RoundedRectangle(cornerRadius: Tokens.S.cardRadius))
@@ -73,22 +94,7 @@ struct HomeView: View {
             .padding(Tokens.S.gutter)
         }
         .background(Tokens.C.bg)
-        .task { await load() }
-    }
-
-    private func load() async {
-        isLoading = true
-        let d = try? await API.shared.get("/api/watch/home", as: HomeData.self)
-        scenes = d?.scenes ?? []
-        isLoading = false
-    }
-
-    private func trigger(_ s: Scene) async {
-        struct Body: Encodable { let routine_id: Int }
-        struct Result: Decodable { let triggered: Bool? }
-        _ = try? await API.shared.post("/api/watch/home", body: Body(routine_id: s.id), as: Result.self)
-        triggered = s.id
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { triggered = nil }
+        .task { await model.load() }
     }
 }
 
