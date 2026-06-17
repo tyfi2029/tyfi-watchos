@@ -21,10 +21,11 @@ jobs:
 
     - name: Build TyFiWatch (watchOS Simulator)
       run: |
+        set -o pipefail
         xcodebuild \
           -scheme TyFiWatch \
           -destination 'platform=watchOS Simulator,name=Apple Watch Ultra 2 (49mm)' \
           -project TyFiWatch.xcodeproj \
           CODE_SIGNING_ALLOWED=NO \
           build \
-          2>&1 | tail -30
+          2>&1 | grep -E "error:|BUILD FAILED|BUILD SUCCEEDED|warning:.*error" | head -60
