@@ -20,6 +20,8 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>TyFi reads heart rate, HRV, SpO2, and temperature to power your live health dashboards.</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -28,3 +30,4 @@
 	<true/>
 </dict>
 </plist>
+
