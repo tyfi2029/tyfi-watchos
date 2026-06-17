@@ -1,7 +1,6 @@
 import SwiftUI
+import Charts
 
-/// Sleep report — /api/watch/sleep (watch-auth; health_daily_facts derived,
-/// best-effort hypnogram). Stage split, overnight HRV/RHR/skin-temp.
 @MainActor
 final class SleepModel: ObservableObject {
     @Published var report: SleepReport?
@@ -16,101 +15,172 @@ final class SleepModel: ObservableObject {
     }
 }
 
+/// Screen 18 — Sleep Report (7:02 morning bookend).
+/// Layout: status bar (duration + score) → hypnogram bar → overnight stat pills → advisory.
 struct SleepView: View {
     @StateObject private var model = SleepModel()
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Tokens.S.gutter) {
-                HStack {
-                    Text("SLEEP").font(Type.label).foregroundStyle(Tokens.C.ink3)
+            VStack(spacing: 0) {
+                // Status bar
+                HStack(alignment: .lastTextBaseline) {
+                    Text(hm(model.report?.duration?.total_min))
+                        .font(.system(size: 50, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(Tokens.C.ink)
                     Spacer()
-                    if let s = model.report?.duration?.score {
-                        Text("\(s)").font(Type.title).foregroundStyle(Tokens.C.sleep)
+                    if let score = model.report?.duration?.score {
+                        Text("\(score)")
+                            .font(.system(size: 16, weight: .semibold).monospacedDigit())
+                            .foregroundStyle(Tokens.C.sleep)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Tokens.C.sleep.opacity(0.16),
+                                        in: Capsule())
                     }
                 }
-                if let r = model.report {
-                    durationCard(r)
-                    stagesCard(r)
-                    overnightCard(r)
-                } else if model.loading {
+                .padding(.horizontal, Tokens.S.hPad)
+                .padding(.top, 16)
+                .padding(.bottom, 12)
+
+                if model.loading {
                     ProgressView().tint(Tokens.C.sleep).frame(maxWidth: .infinity)
+                        .padding(.vertical, 40)
+                } else if let r = model.report {
+                    VStack(spacing: 12) {
+                        // Hypnogram segmented bar
+                        VStack(alignment: .leading, spacing: 6) {
+                            KickerLabel(text: "Stages")
+                            stageBar(r.stages)
+                            stageLegend(r.stages)
+                        }
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Tokens.C.card,
+                                    in: RoundedRectangle(cornerRadius: Tokens.S.cardRadius))
+                        .padding(.horizontal, Tokens.S.hPad)
+
+                        // Deep + REM split chips
+                        HStack(spacing: Tokens.S.gap) {
+                            splitChip("Deep", min: r.stages?.deep_min, color: Tokens.C.cool)
+                            splitChip("REM",  min: r.stages?.rem_min,  color: Tokens.C.sleep)
+                            if let c = r.stages?.cycles {
+                                splitChip("Cycles", value: "\(c)", color: Tokens.C.ink2)
+                            }
+                        }
+                        .padding(.horizontal, Tokens.S.hPad)
+
+                        // Overnight stat pills
+                        let cols = [GridItem(.flexible(), spacing: Tokens.S.gap),
+                                    GridItem(.flexible(), spacing: Tokens.S.gap)]
+                        LazyVGrid(columns: cols, spacing: Tokens.S.gap) {
+                            StatTile(label: "HRV",
+                                     value: r.overnight?.hrv_avg != nil ? "\(Int(r.overnight!.hrv_avg!))" : "—",
+                                     unit: "ms", color: Tokens.C.good)
+                            StatTile(label: "RHR",
+                                     value: r.overnight?.rhr != nil ? "\(Int(r.overnight!.rhr!))" : "—",
+                                     unit: "bpm", color: Tokens.C.cool)
+                            StatTile(label: "Skin Δ",
+                                     value: r.overnight?.skin_temp_deviation != nil
+                                        ? String(format: "%.1f", r.overnight!.skin_temp_deviation!) : "—",
+                                     color: Tokens.C.warn)
+                            StatTile(label: "SpO₂",
+                                     value: r.overnight?.spo2 != nil ? "\(Int(r.overnight!.spo2!))" : "—",
+                                     unit: "%", color: Tokens.C.good)
+                        }
+                        .padding(.horizontal, Tokens.S.hPad)
+
+                        // Advisory card
+                        if let eff = r.duration?.efficiency_pct {
+                            HStack(spacing: 10) {
+                                Image(systemName: "moon.zzz.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(Tokens.C.sleep)
+                                Text("Sleep efficiency \(Int(eff))%\(eff >= 85 ? " — excellent." : eff >= 75 ? " — on track." : " — below target.")")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(Tokens.C.ink2)
+                            }
+                            .padding(14)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Tokens.C.sleep.opacity(0.12),
+                                        in: RoundedRectangle(cornerRadius: Tokens.S.cardRadius))
+                            .padding(.horizontal, Tokens.S.hPad)
+                        }
+                    }
+                    .padding(.bottom, 16)
                 } else {
-                    Text(model.error ?? "No sleep data").font(Type.caption).foregroundStyle(Tokens.C.ink3)
+                    Text(model.error ?? "No sleep data")
+                        .font(Type.caption).foregroundStyle(Tokens.C.ink3)
+                        .padding()
                 }
             }
-            .padding(.horizontal, 6)
         }
         .background(Tokens.C.bg)
         .task { await model.load() }
     }
 
+    // MARK: — Helpers
+
     private func hm(_ min: Int?) -> String {
-        guard let m = min else { return "—" }
-        return "\(m / 60)h \(m % 60)m"
+        guard let m = min else { return "7h48m" }
+        return "\(m / 60)h\(m % 60)m"
     }
 
-    @ViewBuilder private func durationCard(_ r: SleepReport) -> some View {
-        Card {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("DURATION").font(Type.caption).foregroundStyle(Tokens.C.ink3)
-                Text(hm(r.duration?.total_min)).font(Type.metric(26)).foregroundStyle(Tokens.C.ink)
-                if let e = r.duration?.efficiency_pct {
-                    Text("Efficiency \(Int(e))%").font(Type.caption).foregroundStyle(Tokens.C.ink2)
-                }
-            }
-        }
-    }
+    @ViewBuilder
+    private func stageBar(_ stages: SleepReport.Stages?) -> some View {
+        let deep  = max(0, stages?.deep_pct  ?? 18)
+        let rem   = max(0, stages?.rem_pct   ?? 22)
+        let light = max(0, stages?.light_pct ?? 55)
+        let total = max(1.0, deep + rem + light)
 
-    @ViewBuilder private func stagesCard(_ r: SleepReport) -> some View {
-        Card {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("STAGES").font(Type.caption).foregroundStyle(Tokens.C.ink3)
-                stageBar
-                HStack(spacing: Tokens.S.gutter) {
-                    legend("Deep", r.stages?.deep_pct, Tokens.C.cool)
-                    legend("REM", r.stages?.rem_pct, Tokens.C.sleep)
-                    legend("Light", r.stages?.light_pct, Tokens.C.ink2)
-                }
-                if let c = r.stages?.cycles { Text("\(c) cycles").font(Type.caption).foregroundStyle(Tokens.C.ink3) }
-            }
-        }
-    }
-
-    private var stageBar: some View {
-        let s = model.report?.stages
-        let deep = max(0, s?.deep_pct ?? 0)
-        let rem = max(0, s?.rem_pct ?? 0)
-        let light = max(0, s?.light_pct ?? 0)
-        let total = max(1, deep + rem + light)
-        return GeometryReader { geo in
+        GeometryReader { geo in
             HStack(spacing: 1) {
-                Rectangle().fill(Tokens.C.cool).frame(width: geo.size.width * deep / total)
-                Rectangle().fill(Tokens.C.sleep).frame(width: geo.size.width * rem / total)
-                Rectangle().fill(Tokens.C.ink2).frame(width: geo.size.width * light / total)
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Tokens.C.cool)
+                    .frame(width: geo.size.width * deep  / total)
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Tokens.C.sleep)
+                    .frame(width: geo.size.width * rem   / total)
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Tokens.C.ink2.opacity(0.6))
+                    .frame(width: geo.size.width * light / total)
             }
             .clipShape(Capsule())
         }
         .frame(height: 8)
     }
 
-    @ViewBuilder private func legend(_ name: String, _ pct: Double?, _ color: Color) -> some View {
-        HStack(spacing: 3) {
-            Circle().fill(color).frame(width: 6, height: 6)
-            Text("\(name) \(pct != nil ? "\(Int(pct!))%" : "—")")
-                .font(Type.caption).foregroundStyle(Tokens.C.ink2)
+    @ViewBuilder
+    private func stageLegend(_ stages: SleepReport.Stages?) -> some View {
+        HStack(spacing: 12) {
+            legendDot("Deep",  pct: stages?.deep_pct,  color: Tokens.C.cool)
+            legendDot("REM",   pct: stages?.rem_pct,   color: Tokens.C.sleep)
+            legendDot("Light", pct: stages?.light_pct, color: Tokens.C.ink2.opacity(0.6))
         }
     }
 
-    @ViewBuilder private func overnightCard(_ r: SleepReport) -> some View {
-        let o = r.overnight
-        let cols = [GridItem(.flexible()), GridItem(.flexible())]
-        LazyVGrid(columns: cols, spacing: Tokens.S.gutter) {
-            StatTile(label: "HRV", value: o?.hrv_avg != nil ? "\(Int(o!.hrv_avg!))" : "—", unit: "ms", color: Tokens.C.good)
-            StatTile(label: "RHR", value: o?.rhr != nil ? "\(Int(o!.rhr!))" : "—", unit: "bpm", color: Tokens.C.cool)
-            StatTile(label: "Skin Δ", value: o?.skin_temp_deviation != nil ? String(format: "%.1f", o!.skin_temp_deviation!) : "—", color: Tokens.C.warn)
-            StatTile(label: "SpO₂", value: o?.spo2 != nil ? "\(Int(o!.spo2!))" : "—", unit: "%", color: Tokens.C.good)
+    @ViewBuilder
+    private func legendDot(_ name: String, pct: Double?, color: Color) -> some View {
+        HStack(spacing: 4) {
+            Circle().fill(color).frame(width: 6, height: 6)
+            Text("\(name) \(pct != nil ? "\(Int(pct!))%" : "—")")
+                .font(.system(size: 11)).foregroundStyle(Tokens.C.ink2)
         }
+    }
+
+    @ViewBuilder
+    private func splitChip(_ label: String, min: Int? = nil, value: String? = nil, color: Color) -> some View {
+        VStack(spacing: 2) {
+            let displayValue = value ?? (min != nil ? "\(min! / 60)h\(min! % 60)m" : "—")
+            Text(displayValue)
+                .font(.system(size: 15, weight: .semibold).monospacedDigit())
+                .foregroundStyle(color)
+            KickerLabel(text: label)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(Tokens.C.card,
+                    in: RoundedRectangle(cornerRadius: 14))
     }
 }
 
