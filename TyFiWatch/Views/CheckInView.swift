@@ -30,6 +30,7 @@ final class CheckInModel: ObservableObject {
         _ = try? await API.shared.post("/api/watch/venue/checkin", body: body, as: VenueCheckinResult.self)
         checkedInId = v.id
         checkedInName = v.name ?? ""
+        Haptics.success()
         withAnimation { showRating = true }
     }
 

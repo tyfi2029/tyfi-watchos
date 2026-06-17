@@ -31,6 +31,7 @@ struct ValueBump: ViewModifier {
         content
             .scaleEffect(scale)
             .onChange(of: trigger) { _, _ in
+                Haptics.click()
                 withAnimation(Motion.bumpHalf) { scale = 1.14 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.17) {
                     withAnimation(Motion.bumpHalf) { scale = 1.0 }

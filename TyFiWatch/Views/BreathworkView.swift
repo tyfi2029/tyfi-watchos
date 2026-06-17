@@ -54,6 +54,7 @@ final class BreathModel: ObservableObject {
 
     func stop() async {
         timer?.invalidate(); running = false; phase = .idle
+        Haptics.success()
         HealthKitManager.shared.stop()
         let _ = await HealthKitManager.shared.stopBreathworkSession()
         guard let sid = sessionId else { return }
@@ -79,7 +80,7 @@ final class BreathModel: ObservableObject {
         case .idle: break
         }
     }
-    private func advance(_ p: BreathPhase) { phase = p; remaining = p.seconds }
+    private func advance(_ p: BreathPhase) { Haptics.click(); phase = p; remaining = p.seconds }
 }
 
 /// Screen 22 — Breathwork.

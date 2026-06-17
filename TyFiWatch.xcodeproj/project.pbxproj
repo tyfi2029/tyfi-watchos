@@ -12,6 +12,7 @@
 		0C6875E94BB05EBDC9FD8716 /* PairingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF71E5162748088B6E980264 /* PairingView.swift */; };
 		1844FE0DBAF2578F93977C0C /* home.json in Resources */ = {isa = PBXBuildFile; fileRef = 02426EE8F6C5213639CA44C9 /* home.json */; };
 		192D4910C39CA3E779CE5B67 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2EE7E1D6EAEEEFB2A741F8 /* Models.swift */; };
+		24FF36DC9A3D0F12F269A957 /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93C5047D0A2760B34E37403 /* Haptics.swift */; };
 		2808723F81DB0131EA18DD2D /* Motion.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECD7B431A95993F8FE147556 /* Motion.swift */; };
 		29F0A01F852D87A41220ED87 /* FastingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E64B9DDE046774F028B60E5 /* FastingView.swift */; };
 		2C49BE57443337A6FA621ACF /* fasting.json in Resources */ = {isa = PBXBuildFile; fileRef = 367A3D634E545B8FAF4025E8 /* fasting.json */; };
@@ -119,6 +120,7 @@
 		C4D633B42F756607DCF79DAA /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		C5BC41E8566E037C4A994FCD /* SleepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepView.swift; sourceTree = "<group>"; };
 		C6645418A473D9E037B48EAC /* MockURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockURLProtocol.swift; sourceTree = "<group>"; };
+		C93C5047D0A2760B34E37403 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
 		CCA64710B549D932DC1594F9 /* ReadinessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessView.swift; sourceTree = "<group>"; };
 		D081C2DFA77D60F654B0E8D9 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		D25FCF2424FD07B3F9F59B78 /* Zone2View.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zone2View.swift; sourceTree = "<group>"; };
@@ -214,6 +216,7 @@
 			isa = PBXGroup;
 			children = (
 				C4D633B42F756607DCF79DAA /* Components.swift */,
+				C93C5047D0A2760B34E37403 /* Haptics.swift */,
 				1B4355F1FC538C797E1F7F7E /* LoadState.swift */,
 				ECD7B431A95993F8FE147556 /* Motion.swift */,
 				6ED1AEC452A052EDC74B4207 /* Tokens.swift */,
@@ -446,6 +449,7 @@
 				CAFB8E70CA0314E8F02DB317 /* EnvironmentView.swift in Sources */,
 				29F0A01F852D87A41220ED87 /* FastingView.swift in Sources */,
 				45CAEFDAB33CF25E660D131C /* FlightView.swift in Sources */,
+				24FF36DC9A3D0F12F269A957 /* Haptics.swift in Sources */,
 				A70AE599DFFB3663FB786BC3 /* HealthKitManager.swift in Sources */,
 				8EAFB094349ED117E2F5F937 /* HomeView.swift in Sources */,
 				FAC77A6A675200BAF2CD50DF /* LiveSensorsView.swift in Sources */,

@@ -61,6 +61,7 @@ final class SessionModel: ObservableObject {
 
     func finish() async {
         ticker?.invalidate(); running = false; sessionDone = true
+        Haptics.success()
         if let sid = serverSessionId {
             let body = SessionEndBody(session_id: sid, elapsed_sec: elapsed,
                 ended_at: ISO8601DateFormatter().string(from: Date()),

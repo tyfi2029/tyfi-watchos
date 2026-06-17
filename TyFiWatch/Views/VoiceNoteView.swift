@@ -234,8 +234,10 @@ struct VoiceNoteView: View {
             metadata: selectedTags.isEmpty ? nil : ["tags": selectedTags.joined(separator: ",")])
         do {
             _ = try await API.shared.post("/api/watch/capture/voice", body: body, as: CaptureResult.self)
+            Haptics.success()
             withAnimation { saved = true }
         } catch {
+            Haptics.failure()
             errorMsg = "Save failed"
         }
         isSaving = false

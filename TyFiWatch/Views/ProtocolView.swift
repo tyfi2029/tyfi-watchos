@@ -23,6 +23,7 @@ final class ProtocolModel: ObservableObject {
             segments = try await API.shared.post(
                 "/api/watch/protocol/item/\(item.id)/toggle",
                 body: body, as: ProtocolToday.self).segments
+            Haptics.click()
         } catch { /* keep current state */ }
     }
 }

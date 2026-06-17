@@ -147,7 +147,7 @@ struct PillButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button(action: { Haptics.click(); action() }) {
             HStack(spacing: 7) {
                 if let sym = icon {
                     Image(systemName: sym)
