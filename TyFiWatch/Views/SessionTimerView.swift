@@ -1,13 +1,29 @@
 import SwiftUI
 
-/// Session timer — recent thermal/recovery sessions from /api/watch/session
-/// (watch-auth read of health_thermal_sessions) plus a local stopwatch.
-/// Live HR badge shown while stopwatch is running.
+enum SessionMode: String, CaseIterable {
+    case cold  = "Cold plunge"
+    case sauna = "Sauna"
+    var color: Color    { self == .cold ? Tokens.C.cool : Tokens.C.warn }
+    var target: Int     { self == .cold ? 180 : 1200 }   // seconds
+    var tempRange: ClosedRange<Double> { self == .cold ? 38...60 : 150...220 }
+    var defaultTemp: Double { self == .cold ? 50 : 180 }
+}
+
 @MainActor
 final class SessionModel: ObservableObject {
     @Published var list: SessionList?
     @Published var error: String?
     @Published var loading = false
+
+    // Live session state
+    @Published var mode: SessionMode = .cold
+    @Published var tempF: Double = 50
+    @Published var running = false
+    @Published var elapsed = 0
+    @Published var sessionDone = false
+    @Published var serverSessionId: Int?
+
+    private var ticker: Timer?
 
     func load() async {
         loading = true; defer { loading = false }
@@ -15,115 +31,289 @@ final class SessionModel: ObservableObject {
         catch APIError.notAuthed { error = "Pair watch" }
         catch { self.error = "Offline" }
     }
+
+    func start() async {
+        elapsed = 0; running = true; sessionDone = false
+        await HealthKitManager.shared.requestAuth()
+        let body = SessionStartBody(mode: mode.rawValue.lowercased(),
+            temp_f: tempF, target_sec: mode.target,
+            started_at: ISO8601DateFormatter().string(from: Date()),
+            backfill_sec: nil, detection_source: nil, detection_score: nil)
+        let res = try? await API.shared.post("/api/watch/session/start",
+            body: body, as: SessionStartResult.self)
+        serverSessionId = res?.session_id
+        ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            Task { @MainActor in
+                self.elapsed += 1
+                if self.mode == .cold && self.elapsed >= self.mode.target {
+                    await self.finish()
+                }
+            }
+        }
+    }
+
+    func finish() async {
+        ticker?.invalidate(); running = false; sessionDone = true
+        if let sid = serverSessionId {
+            let body = SessionEndBody(session_id: sid, elapsed_sec: elapsed,
+                ended_at: ISO8601DateFormatter().string(from: Date()),
+                hr_avg: HealthKitManager.shared.heartRate,
+                hr_peak: nil, completion_status: "completed")
+            _ = try? await API.shared.post("/api/watch/session/end", body: body, as: SessionEndResult.self)
+        }
+        await load()
+    }
+
+    func reset() { ticker?.invalidate(); running = false; elapsed = 0; sessionDone = false }
 }
 
+/// Screen 7 — Session Timer.
+/// Layout: auto-detect banner → mode switch → ring timer → temp slider / HR → start/reset.
 struct SessionTimerView: View {
     @StateObject private var model = SessionModel()
     @ObservedObject private var hk = HealthKitManager.shared
     @EnvironmentObject var units: Units
-    @State private var running = false
-    @State private var elapsed = 0
-    @State private var timer: Timer?
+
+    private var displayTime: String {
+        if model.mode == .cold {
+            let rem = max(0, model.mode.target - model.elapsed)
+            return String(format: "%d:%02d", rem / 60, rem % 60)
+        }
+        return String(format: "%d:%02d", model.elapsed / 60, model.elapsed % 60)
+    }
+
+    private var ringPct: Double {
+        model.mode == .cold
+            ? Double(max(0, model.mode.target - model.elapsed)) / Double(model.mode.target)
+            : min(1, Double(model.elapsed) / Double(model.mode.target))
+    }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Tokens.S.gutter) {
-                Text("SESSION").font(Type.label).foregroundStyle(Tokens.C.ink3)
-                stopwatch
-                if let r = model.list?.rolling_7d {
-                    HStack(spacing: Tokens.S.gutter) {
-                        StatTile(label: "Heat 7d", value: "\(r.heat_min ?? 0)", unit: "min", color: Tokens.C.warn)
-                        StatTile(label: "Cold 7d", value: "\(r.cold_min ?? 0)", unit: "min", color: Tokens.C.cool)
+            VStack(spacing: 0) {
+                // Status bar
+                HStack {
+                    HStack(spacing: 8) {
+                        Image(systemName: "clock.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(model.mode.color)
+                        Text("Session")
+                            .font(.system(size: 19, weight: .semibold))
+                    }
+                    Spacer()
+                    Text("9:41")
+                        .font(.system(size: 21, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(Tokens.C.accent)
+                }
+                .padding(.horizontal, Tokens.S.hPad)
+                .padding(.top, 10)
+                .padding(.bottom, 10)
+
+                VStack(spacing: 10) {
+                    // Auto-detect banner
+                    if !model.running {
+                        autoDetectBanner
+                    }
+
+                    // Mode switch
+                    if !model.running {
+                        modePicker
+                    }
+
+                    // Ring timer
+                    ZStack {
+                        Ring(progress: ringPct, color: model.mode.color, lineWidth: 12)
+                            .frame(width: 162, height: 162)
+                        VStack(spacing: 2) {
+                            Text(displayTime)
+                                .font(.system(size: 46, weight: .semibold).monospacedDigit())
+                                .foregroundStyle(Tokens.C.ink)
+                            Text(model.running
+                                 ? "\(units.temp(model.tempF))"
+                                 : "target \(String(format: "%d:%02d", model.mode.target / 60, model.mode.target % 60)) · \(units.temp(model.tempF))")
+                                .font(.system(size: 11.5))
+                                .foregroundStyle(Tokens.C.ink3)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 8)
+                        }
+                    }
+
+                    // Temp slider (pre-start) or live HR (running)
+                    if model.running {
+                        liveHR
+                    } else {
+                        tempSlider
+                    }
+
+                    // Completion card
+                    if model.sessionDone {
+                        completionCard
+                    }
+
+                    // Start / reset row
+                    if !model.sessionDone {
+                        HStack(spacing: 10) {
+                            Button { model.reset() } label: {
+                                Image(systemName: "arrow.counterclockwise")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(Tokens.C.ink2)
+                                    .frame(width: Tokens.S.tapH, height: Tokens.S.tapH)
+                                    .background(Tokens.C.card,
+                                                in: RoundedRectangle(cornerRadius: 18))
+                            }
+                            .buttonStyle(.plain)
+                            .pressScale()
+
+                            Button {
+                                Task { model.running ? await model.finish() : await model.start() }
+                            } label: {
+                                HStack(spacing: 9) {
+                                    Image(systemName: model.running ? "stop.fill" : "play.fill")
+                                        .font(.system(size: 18, weight: .semibold))
+                                    Text(model.running ? "Finish" : "Start")
+                                        .font(.system(size: 17, weight: .semibold))
+                                }
+                                .foregroundStyle(.black)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: Tokens.S.tapH)
+                                .background(model.mode.color,
+                                            in: RoundedRectangle(cornerRadius: 18))
+                            }
+                            .buttonStyle(.plain)
+                            .pressScale()
+                        }
                     }
                 }
-                Text("RECENT").font(Type.caption).foregroundStyle(Tokens.C.ink3).padding(.top, 2)
-                if let sessions = model.list?.sessions {
-                    ForEach(sessions.prefix(8)) { s in sessionRow(s) }
-                } else if model.loading {
-                    ProgressView().tint(Tokens.C.accent).frame(maxWidth: .infinity)
-                } else {
-                    Text(model.error ?? "No sessions").font(Type.caption).foregroundStyle(Tokens.C.ink3)
-                }
+                .padding(.horizontal, Tokens.S.hPad)
+                .padding(.bottom, 16)
             }
-            .padding(.horizontal, 6)
         }
         .background(Tokens.C.bg)
         .task { await model.load() }
-        .onDisappear { timer?.invalidate() }
+        .onDisappear { model.reset() }
     }
 
-    private var stopwatch: some View {
-        Card {
-            VStack(spacing: 4) {
-                HStack {
-                    Text(clock(elapsed))
-                        .font(Type.metric(30))
-                        .monospacedDigit()
-                        .foregroundStyle(running ? Tokens.C.good : Tokens.C.ink)
-                    Spacer()
-                    Button(running ? "Stop" : "Start") { toggle() }
-                        .font(Type.label)
-                        .tint(running ? Tokens.C.bad : Tokens.C.good)
-                }
-                // Live HR badge — visible only while session is running
-                if running {
-                    HStack(spacing: 4) {
-                        Image(systemName: "heart.fill")
-                            .font(.system(size: 10))
-                            .foregroundStyle(hrBadgeColor)
-                        if let hr = hk.heartRate {
-                            Text("\(Int(hr)) bpm")
-                                .font(Type.caption)
-                                .monospacedDigit()
-                                .foregroundStyle(hrBadgeColor)
-                        } else {
-                            Text("— bpm")
-                                .font(Type.caption)
-                                .monospacedDigit()
-                                .foregroundStyle(Tokens.C.ink3)
-                        }
-                        Spacer()
+    private var autoDetectBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "thermometer.snowflake")
+                .font(.system(size: 18))
+                .foregroundStyle(Tokens.C.cool)
+                .frame(width: 50)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("❄ COLD DETECTED")
+                    .font(.system(size: 11, weight: .medium))
+                    .tracking(1.0)
+                    .foregroundStyle(Tokens.C.cool)
+                Text("skin −16°F · began 0:24 ago")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Tokens.C.ink2)
+            }
+            Spacer()
+            Text("Track")
+                .font(.system(size: 12.5, weight: .semibold))
+                .foregroundStyle(.black)
+                .padding(.horizontal, 13)
+                .padding(.vertical, 7)
+                .background(Tokens.C.cool, in: Capsule())
+        }
+        .padding(.horizontal, 13)
+        .padding(.vertical, 10)
+        .background(Tokens.C.cool.opacity(0.14),
+                    in: RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .strokeBorder(Tokens.C.cool.opacity(0.3), lineWidth: 1)
+        )
+    }
+
+    private var modePicker: some View {
+        HStack(spacing: 4) {
+            ForEach(SessionMode.allCases, id: \.rawValue) { m in
+                Button {
+                    withAnimation(Motion.press) {
+                        model.mode = m
+                        model.tempF = m.defaultTemp
                     }
+                } label: {
+                    Text(m.rawValue)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(model.mode == m ? Color.white : Tokens.C.ink3)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 38)
+                        .background(model.mode == m ? m.color.opacity(0.18) : Color.clear,
+                                    in: RoundedRectangle(cornerRadius: 13))
                 }
+                .buttonStyle(.plain)
             }
         }
+        .padding(4)
+        .background(Tokens.C.card, in: RoundedRectangle(cornerRadius: 16))
     }
 
-    private var hrBadgeColor: Color {
-        guard let hr = hk.heartRate else { return Tokens.C.ink3 }
-        if hr > 170 { return Tokens.C.bad }
-        if hr > 150 { return Tokens.C.warn }
-        return Color(red: 0.878, green: 0.631, blue: 0.302) // #e0a14d
-    }
-
-    private func toggle() {
-        running.toggle()
-        if running {
-            elapsed = 0
-            timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-                Task { @MainActor in elapsed += 1 }
-            }
-        } else {
-            timer?.invalidate()
-        }
-    }
-
-    private func clock(_ s: Int) -> String { String(format: "%02d:%02d", s / 60, s % 60) }
-
-    @ViewBuilder private func sessionRow(_ s: SessionList.WatchSession) -> some View {
-        Card {
+    private var tempSlider: some View {
+        VStack(spacing: 8) {
             HStack {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text((s.mode ?? "session").capitalized).font(Type.body).foregroundStyle(Tokens.C.ink)
-                    Text(s.date ?? "").font(Type.caption).foregroundStyle(Tokens.C.ink3)
-                }
+                KickerLabel(text: "Temperature")
                 Spacer()
-                VStack(alignment: .trailing, spacing: 1) {
-                    Text("\(s.duration_min ?? 0) min").font(Type.body).foregroundStyle(Tokens.C.ink2).tabularDigits()
-                    if let f = s.temp_f { Text(units.temp(f)).font(Type.caption).foregroundStyle(Tokens.C.ink3) }
-                }
+                Text(units.temp(model.tempF))
+                    .font(.system(size: 16, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(Tokens.C.ink)
             }
+            Slider(value: $model.tempF, in: model.mode.tempRange, step: 1)
+                .tint(model.mode.color)
         }
+    }
+
+    @ViewBuilder
+    private var liveHR: some View {
+        HStack(spacing: 11) {
+            Image(systemName: "heart.fill")
+                .font(.system(size: 22))
+                .foregroundStyle(Tokens.C.bad)
+                .scaleEffect(model.running ? 1.0 : 1.0)
+                .animation(
+                    model.running
+                        ? .easeInOut(duration: 1.0).repeatForever(autoreverses: true)
+                        : .default,
+                    value: model.running)
+            if let hr = hk.heartRate {
+                Text("\(Int(hr))")
+                    .font(.system(size: 34, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(Tokens.C.ink)
+            } else {
+                Text("—")
+                    .font(.system(size: 34, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(Tokens.C.ink3)
+            }
+            Text("bpm")
+                .font(.system(size: 13))
+                .foregroundStyle(Tokens.C.ink3)
+            Spacer()
+            Text(units.temp(model.tempF))
+                .font(.system(size: 14, weight: .semibold).monospacedDigit())
+                .foregroundStyle(model.mode.color)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var completionCard: some View {
+        HStack(spacing: 11) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 24))
+                .foregroundStyle(Tokens.C.good)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(model.mode.rawValue) complete")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Tokens.C.ink)
+                Text("\(String(format: "%d:%02d", model.elapsed / 60, model.elapsed % 60)) @ \(units.temp(model.tempF)) · logged")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Tokens.C.ink2)
+            }
+            Spacer()
+        }
+        .padding(14)
+        .background(Tokens.C.good.opacity(0.12),
+                    in: RoundedRectangle(cornerRadius: Tokens.S.cardRadius))
     }
 }
 
