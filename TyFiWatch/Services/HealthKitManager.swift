@@ -40,6 +40,8 @@ final class HealthKitManager: ObservableObject {
         var readTypes: Set<HKSampleType> = [
             HKQuantityType(.heartRate),
             HKQuantityType(.heartRateVariabilitySDNN),
+            HKQuantityType(.restingHeartRate),
+            HKQuantityType(.respiratoryRate),
             HKQuantityType(.oxygenSaturation),
             HKQuantityType(.activeEnergyBurned),
             HKQuantityType(.stepCount),
