@@ -1,20 +1,51 @@
 import SwiftUI
 
-struct CheckInView: View {
-    struct Venue: Decodable, Identifiable {
-        let id: Int
-        let name: String
-        let distance_mi: Double?
-        let last_visited_at: String?
-    }
-    struct NearbyData: Decodable { let venues: [Venue] }
+/// Check In — /api/watch/venue/nearby (GET) + /venue/checkin (POST) + /venue/rate (POST).
+/// Uses VenueList, VenueCheckinBody, VenueCheckinResult, VenueRatingBody, VenueRatingResult
+/// from Models.swift — verified frozen contract 2026-06-14.
+@MainActor
+final class CheckInModel: ObservableObject {
+    @Published var venues: [Venue] = []
+    @Published var error: String?
+    @Published var loading = false
+    @Published var checkedIn: Int? = nil
+    @Published var checkinName: String = ""
+    @Published var showRating = false
+    @Published var rating = 0
 
-    @State private var venues: [Venue] = []
-    @State private var isLoading = true
-    @State private var checkedIn: Int? = nil
-    @State private var checkinName: String = ""
-    @State private var rating: Int = 0
-    @State private var showRating = false
+    func load() async {
+        loading = true; defer { loading = false }
+        do {
+            let data = try await API.shared.get("/api/watch/venue/nearby", as: VenueList.self)
+            venues = data.venues ?? []
+            error = nil
+        } catch APIError.notAuthed { error = "Pair watch" }
+        catch { self.error = "Offline" }
+    }
+
+    func checkIn(_ v: Venue) async {
+        let body = VenueCheckinBody(
+            venue_id: v.id ?? 0,
+            checked_in_at: ISO8601DateFormatter().string(from: Date()),
+            lat: nil, lng: nil)
+        _ = try? await API.shared.post("/api/watch/venue/checkin", body: body, as: VenueCheckinResult.self)
+        checkedIn = v.id
+        checkinName = v.name ?? ""
+        showRating = true
+    }
+
+    func submitRating() async {
+        guard let id = checkedIn, rating > 0 else { showRating = false; return }
+        let body = VenueRatingBody(
+            venue_id: id, stars: rating,
+            rated_at: ISO8601DateFormatter().string(from: Date()))
+        _ = try? await API.shared.post("/api/watch/venue/rate", body: body, as: VenueRatingResult.self)
+        showRating = false
+    }
+}
+
+struct CheckInView: View {
+    @StateObject private var model = CheckInModel()
 
     var body: some View {
         ScrollView {
@@ -24,28 +55,28 @@ struct CheckInView: View {
                     Text("Check In").font(Type.label).foregroundStyle(Tokens.C.ink)
                     Spacer()
                 }
-                if isLoading {
+                if model.loading {
                     ProgressView().tint(Tokens.C.accent).frame(maxWidth: .infinity)
-                } else if venues.isEmpty {
+                } else if model.venues.isEmpty {
                     Card {
-                        Text("No venues nearby").font(Type.caption).foregroundStyle(Tokens.C.ink2)
+                        Text(model.error ?? "No venues nearby").font(Type.caption).foregroundStyle(Tokens.C.ink2)
                     }
                 } else {
-                    ForEach(venues.prefix(8)) { v in
+                    ForEach(model.venues.prefix(8)) { v in
                         Button {
-                            Task { await checkIn(v) }
+                            Task { await model.checkIn(v) }
                         } label: {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(v.name).font(Type.body)
-                                        .foregroundStyle(checkedIn == v.id ? Tokens.C.good : Tokens.C.ink)
+                                    Text(v.name ?? "").font(Type.body)
+                                        .foregroundStyle(model.checkedIn == v.id ? Tokens.C.good : Tokens.C.ink)
                                     if let d = v.distance_mi {
                                         Text(String(format: "%.1f mi", d))
                                             .font(Type.caption).foregroundStyle(Tokens.C.ink3)
                                     }
                                 }
                                 Spacer()
-                                if checkedIn == v.id {
+                                if model.checkedIn == v.id {
                                     Image(systemName: "checkmark.circle.fill").foregroundStyle(Tokens.C.good)
                                 }
                             }
@@ -55,23 +86,23 @@ struct CheckInView: View {
                         }
                         .buttonStyle(.plain)
                     }
-                    if showRating {
+                    if model.showRating {
                         Card {
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("Rate: \(checkinName)").font(Type.caption).foregroundStyle(Tokens.C.ink2)
+                                Text("Rate: \(model.checkinName)").font(Type.caption).foregroundStyle(Tokens.C.ink2)
                                 HStack {
                                     ForEach(1...5, id: \.self) { i in
                                         Button {
-                                            rating = i
+                                            model.rating = i
                                         } label: {
-                                            Image(systemName: i <= rating ? "star.fill" : "star")
-                                                .foregroundStyle(i <= rating ? Tokens.C.warn : Tokens.C.ink3)
+                                            Image(systemName: i <= model.rating ? "star.fill" : "star")
+                                                .foregroundStyle(i <= model.rating ? Tokens.C.warn : Tokens.C.ink3)
                                         }
                                         .buttonStyle(.plain)
                                     }
                                 }
                                 Button("Submit") {
-                                    Task { await submitRating() }
+                                    Task { await model.submitRating() }
                                 }
                                 .font(Type.caption).tint(Tokens.C.accent)
                             }
@@ -82,32 +113,7 @@ struct CheckInView: View {
             .padding(Tokens.S.gutter)
         }
         .background(Tokens.C.bg)
-        .task { await load() }
-    }
-
-    private func load() async {
-        isLoading = true
-        let data = try? await API.shared.get("/api/watch/venue/nearby", as: NearbyData.self)
-        venues = data?.venues ?? []
-        isLoading = false
-    }
-
-    private func checkIn(_ v: Venue) async {
-        struct Body: Encodable { let venue_id: Int; let checked_in_at: String }
-        struct Result: Decodable { let checkin_id: String? }
-        let body = Body(venue_id: v.id, checked_in_at: ISO8601DateFormatter().string(from: Date()))
-        _ = try? await API.shared.post("/api/watch/venue/checkin", body: body, as: Result.self)
-        checkedIn = v.id
-        checkinName = v.name
-        showRating = true
-    }
-
-    private func submitRating() async {
-        guard let id = checkedIn, rating > 0 else { showRating = false; return }
-        struct Body: Encodable { let venue_id: Int; let rating: Int }
-        struct Result: Decodable { let ok: Bool? }
-        _ = try? await API.shared.post("/api/watch/venue/rate", body: Body(venue_id: id, rating: rating), as: Result.self)
-        showRating = false
+        .task { await model.load() }
     }
 }
 
