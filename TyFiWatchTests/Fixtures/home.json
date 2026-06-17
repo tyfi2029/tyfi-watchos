@@ -1,0 +1,7 @@
+{
+  "scenes": [
+    { "id": 1, "name": "wind_down", "label": "Wind Down", "icon": "moon.stars" },
+    { "id": 2, "name": "focus", "label": "Focus", "icon": "brain.head.profile" },
+    { "id": 3, "name": "movie", "label": "Movie", "icon": "film" }
+  ]
+}

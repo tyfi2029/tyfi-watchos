@@ -1,0 +1,7 @@
+{
+  "venues": [
+    { "id": 501, "name": "Othership Sauna", "distance_mi": 0.4, "open_status": "open", "last_visited_at": "2026-06-14T18:00:00.000Z" },
+    { "id": 502, "name": "Brass Monkey Cold Plunge", "distance_mi": 1.2, "open_status": "open", "last_visited_at": null },
+    { "id": 503, "name": "Recovery Lab", "distance_mi": 2.8, "open_status": "closed", "last_visited_at": "2026-06-01T12:00:00.000Z" }
+  ]
+}

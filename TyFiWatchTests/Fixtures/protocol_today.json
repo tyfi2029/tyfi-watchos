@@ -1,0 +1,31 @@
+{
+  "segments": [
+    {
+      "name": "Morning",
+      "rangeStart": "06:00",
+      "rangeEnd": "12:00",
+      "items": [
+        { "id": "p_am_1", "time": "06:30", "label": "AM supplements", "done": true, "tempF": null },
+        { "id": "p_am_2", "time": "07:00", "label": "Sauna 20m", "done": true, "tempF": 180.0 },
+        { "id": "p_am_3", "time": "07:30", "label": "Cold plunge 3m", "done": true, "tempF": 48.0 }
+      ]
+    },
+    {
+      "name": "Afternoon",
+      "rangeStart": "12:00",
+      "rangeEnd": "18:00",
+      "items": [
+        { "id": "p_pm_1", "time": "16:45", "label": "Cold plunge", "done": false, "tempF": 48.0 },
+        { "id": "p_pm_2", "time": "", "label": "Zone 2 walk", "done": false, "tempF": null }
+      ]
+    },
+    {
+      "name": "Evening",
+      "rangeStart": "18:00",
+      "rangeEnd": "22:00",
+      "items": [
+        { "id": "p_ev_1", "time": "20:00", "label": "PM supplements", "done": false, "tempF": null }
+      ]
+    }
+  ]
+}

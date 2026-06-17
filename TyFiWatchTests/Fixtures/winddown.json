@@ -1,0 +1,9 @@
+{
+  "eight_sleep": { "bedTempF": 78.0, "targetTempF": 68.0, "isOn": true },
+  "checklist": [
+    { "id": "wd_1", "label": "Dim lights", "done": true },
+    { "id": "wd_2", "label": "Magnesium", "done": false },
+    { "id": "wd_3", "label": "Screens off", "done": false }
+  ],
+  "scene": "Wind Down"
+}

@@ -1,0 +1,11 @@
+{
+  "active_flight": {
+    "flight_number": "UA 2291",
+    "origin": "DEN",
+    "destination": "SFO",
+    "departure_at": "2026-06-18T14:20:00.000Z",
+    "arrival_at": "2026-06-18T16:35:00.000Z",
+    "status": "on_time"
+  },
+  "jetlag": { "direction": "west", "hours_shifted": 1.0, "recovery_day": 1 }
+}

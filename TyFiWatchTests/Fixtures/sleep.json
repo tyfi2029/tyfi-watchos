@@ -1,0 +1,8 @@
+{
+  "date": "2026-06-17",
+  "duration": { "total_min": 442, "efficiency_pct": 91.2, "score": 84, "debt_hrs": 0.8, "consistency": 0.86 },
+  "stages": { "deep_pct": 18.0, "rem_pct": 22.0, "light_pct": 56.0, "deep_min": 80, "rem_min": 97, "light_min": 247, "cycles": 5 },
+  "overnight": { "hrv_avg": 46.0, "hrv_min": 28.0, "hrv_max": 71.0, "rhr": 51.0, "skin_temp_deviation": -0.3, "avg_breath": 13.4, "spo2": 96.0 },
+  "recovery_score": 72,
+  "hypnogram": [0, 1, 2, 3, 3, 2, 1, 2, 3, 2, 1, 0, 1, 2, 3, 2, 1, 2, 1, 0]
+}

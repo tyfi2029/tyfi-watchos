@@ -1,0 +1,10 @@
+{
+  "date": "2026-06-17",
+  "air_quality": { "aqi": 42.0, "category": "Good", "pm2_5": 8.1, "no2": 12.0, "o3": 30.0 },
+  "uv": { "index": 6.0, "category": "High" },
+  "pollen": { "grass": 3.0, "ragweed": 1.0, "dominant": "grass", "level": "moderate" },
+  "noise": { "env_db": 48.0, "headphone_db": 72.0, "advisory": "Safe listening level" },
+  "daylight_min": 410.0,
+  "steps": 6400.0,
+  "advisory": "High UV after noon — wear sunscreen for outdoor sessions."
+}

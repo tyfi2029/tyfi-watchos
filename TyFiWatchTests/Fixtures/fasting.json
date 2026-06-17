@@ -1,0 +1,15 @@
+{
+  "active": {
+    "id": 77,
+    "started_at": "2026-06-17T00:00:00.000Z",
+    "target_hrs": 16.0,
+    "elapsed_hrs": 16.1,
+    "remaining_hrs": 0.0,
+    "progress_pct": 100.0,
+    "reached_target": true,
+    "stage": "ketosis",
+    "protocol": "16:8"
+  },
+  "streak": 12,
+  "eating_window": { "open": false, "last_meal_at": "2026-06-16T20:00:00.000Z", "hours_since_last_meal": 20.1 }
+}

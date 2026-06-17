@@ -1,0 +1,14 @@
+{
+  "fetched_at": "2026-06-17T16:05:00.000Z",
+  "cgm": { "glucose_mg_dl": 92, "trend": "rising", "fresh_seconds_ago": 120 },
+  "readiness": { "recovery": 72, "hrv": 47, "sleep": 81, "rhr": 52, "focus": "high" },
+  "dol_next": { "id": "dol_4821", "title": "Cold plunge", "due_at": "2026-06-17T16:45:00.000Z" },
+  "water_today": { "ml": 1600, "goal_ml": 2500, "pace_ml": 1800, "brand": "Liquid IV", "oasis_score": 0.74 },
+  "protocol_progress": { "done": 3, "total": 9, "current_segment": "Afternoon", "next_segment_at": "2026-06-17T18:00:00.000Z" },
+  "supplement_am_done": true,
+  "supplement_pm_done": false,
+  "last_thermal_session": { "mode": "sauna", "completed_at": "2026-06-17T07:30:00.000Z", "duration_sec": 1200, "temp_f": 180.0 },
+  "steps": 6400,
+  "flight": null,
+  "smart_nudge": null
+}
