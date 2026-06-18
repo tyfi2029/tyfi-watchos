@@ -196,7 +196,15 @@ struct TyFiProvider: TimelineProvider {
     }
 
     func getSnapshot(in context: Context, completion: @escaping (TyFiEntry) -> Void) {
-        completion(TyFiEntry(date: Date(), snapshot: .placeholder))
+        if context.isPreview {
+            completion(TyFiEntry(date: Date(), snapshot: .placeholder))
+            return
+        }
+        let task = Task {
+            let snap = await fetchSnapshot()
+            completion(TyFiEntry(date: Date(), snapshot: snap))
+        }
+        _ = task
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<TyFiEntry>) -> Void) {
