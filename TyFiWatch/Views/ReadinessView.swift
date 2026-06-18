@@ -49,10 +49,11 @@ struct ReadinessView: View {
                     ZStack {
                         Ring(progress: Double(model.r?.recovery ?? 0) / 100,
                              color: ringColor, lineWidth: 14)
-                            .frame(width: 172, height: 172)
+                            .frame(width: WatchScreen.ringMd, height: WatchScreen.ringMd)
                         VStack(spacing: 1) {
                             Text("\(model.r?.recovery ?? 0)")
-                                .font(.system(size: 54, weight: .semibold).monospacedDigit())
+                                .font(.system(size: WatchScreen.heroMd, weight: .semibold).monospacedDigit())
+                                .minimumScaleFactor(0.7)
                                 .foregroundStyle(Tokens.C.ink)
                             Text("RECOVERED")
                                 .font(.system(size: 11, weight: .medium))
@@ -140,3 +141,4 @@ struct ReadinessView: View {
 }
 
 #Preview { ReadinessView().environmentObject(Units.shared) }
+
