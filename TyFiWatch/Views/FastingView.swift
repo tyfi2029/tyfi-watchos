@@ -80,12 +80,13 @@ struct FastingView: View {
                 .padding(.bottom, 14)
 
                 VStack(spacing: 14) {
-                    // Main ring
+                    // Main ring — 188pt per spec
                     ZStack {
                         Ring(progress: ringPct, color: ringColor, lineWidth: 11)
-                            .frame(width: 160, height: 160)
+                            .frame(width: 188, height: 188)
                         VStack(spacing: 1) {
-                            Text(model.state?.active != nil ? displayElapsed : "—")
+                            // Show elapsed time when fasting, "--:--" when not
+                            Text(model.state?.active != nil ? displayElapsed : "--:--")
                                 .font(.system(size: 40, weight: .semibold).monospacedDigit())
                                 .foregroundStyle(Tokens.C.ink)
                             Text(model.state?.active != nil
@@ -134,19 +135,31 @@ struct FastingView: View {
                         }
                     }
 
-                    // End / Start button
+                    // CTA button
                     if model.state?.active != nil {
-                        Button("End Fast") { Task { await model.end() } }
-                            .font(.system(size: 16, weight: .semibold))
+                        // Actively fasting → "End fast · start eating" with fork.knife
+                        Button {
+                            Task { await model.end() }
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "fork.knife")
+                                    .font(.system(size: 15, weight: .semibold))
+                                Text("End fast · start eating")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
+                            }
                             .foregroundStyle(Tokens.C.bad)
                             .frame(maxWidth: .infinity)
                             .frame(height: Tokens.S.tapH)
                             .background(Tokens.C.bad.opacity(0.16),
                                         in: RoundedRectangle(cornerRadius: Tokens.S.pillRadius))
-                            .buttonStyle(.plain)
-                            .disabled(model.busy)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(model.busy)
                     } else {
-                        Button("Start Eating") {
+                        // Not fasting → "Start fast" (not "Start Eating")
+                        Button("Start fast") {
                             model.showProtocolPicker = true
                         }
                         .font(.system(size: 16, weight: .semibold))
