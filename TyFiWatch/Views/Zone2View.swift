@@ -99,7 +99,7 @@ struct Zone2View: View {
                     // Big animated heart + bpm — 64pt per spec
                     HStack(alignment: .center, spacing: 14) {
                         Image(systemName: "heart.fill")
-                            .font(.system(size: 44))
+                            .font(.system(size: min(44, WatchScreen.heroXl * 0.68)))
                             .foregroundStyle(Tokens.C.bad)
                             .scaleEffect(heartPulse ? 1.14 : 1.0)
                             .animation(
@@ -110,7 +110,8 @@ struct Zone2View: View {
 
                         VStack(alignment: .leading, spacing: 0) {
                             Text(hk.heartRate.map { "\(Int($0))" } ?? "—")
-                                .font(.system(size: 64, weight: .bold, design: .rounded).monospacedDigit())
+                                .font(.system(size: WatchScreen.heroXl, weight: .bold, design: .rounded).monospacedDigit())
+                                .minimumScaleFactor(0.7)
                                 .foregroundStyle(Tokens.C.ink)
                             Text("bpm")
                                 .font(.system(size: 14))
@@ -213,3 +214,4 @@ struct Zone2View: View {
 }
 
 #Preview { Zone2View() }
+
