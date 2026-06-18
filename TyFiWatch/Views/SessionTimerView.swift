@@ -148,6 +148,8 @@ struct SessionTimerView: View {
                                  : "target \(String(format: "%d:%02d", model.mode.target / 60, model.mode.target % 60)) · \(units.temp(model.tempF))")
                                 .font(.system(size: 11.5))
                                 .foregroundStyle(Tokens.C.ink3)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.6)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 8)
                         }
@@ -209,24 +211,29 @@ struct SessionTimerView: View {
     }
 
     private var autoDetectBanner: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 8) {
             Image(systemName: "thermometer.snowflake")
                 .font(.system(size: 18))
                 .foregroundStyle(Tokens.C.cool)
-                .frame(width: 50)
+                .frame(width: 24)
             VStack(alignment: .leading, spacing: 1) {
                 Text("❄ COLD DETECTED")
                     .font(.system(size: 11, weight: .medium))
                     .tracking(1.0)
                     .foregroundStyle(Tokens.C.cool)
+                    .lineLimit(1)
                 Text("skin −16°F · began 0:24 ago")
                     .font(.system(size: 11.5))
                     .foregroundStyle(Tokens.C.ink2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .truncationMode(.tail)
             }
-            Spacer()
+            Spacer(minLength: 4)
             Text("Track")
                 .font(.system(size: 12.5, weight: .semibold))
                 .foregroundStyle(.black)
+                .lineLimit(1)
                 .padding(.horizontal, 13)
                 .padding(.vertical, 7)
                 .background(Tokens.C.cool, in: Capsule())
