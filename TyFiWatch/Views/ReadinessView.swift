@@ -33,6 +33,7 @@ struct ReadinessView: View {
                         Text("Readiness")
                             .font(.system(size: 19, weight: .semibold))
                             .foregroundStyle(Tokens.C.ink)
+                            .lineLimit(1)
                     }
                     Spacer()
                     Text("6:42")
