@@ -82,11 +82,12 @@ struct WaterView: View {
                 VStack(spacing: 18) {
                     // Big ring
                     ZStack {
-                        Ring(progress: progress, color: Tokens.C.cool, lineWidth: 15)
-                            .frame(width: 226, height: 226)
+                        Ring(progress: progress, color: Tokens.C.cool, lineWidth: WatchScreen.strokeLg)
+                            .frame(width: WatchScreen.ringLg, height: WatchScreen.ringLg)
                         VStack(spacing: 1) {
                             Text(units.fmtLNum(model.today?.ml ?? 0))
-                                .font(.system(size: 62, weight: .semibold).monospacedDigit())
+                                .font(.system(size: WatchScreen.heroLg, weight: .semibold).monospacedDigit())
+                                .minimumScaleFactor(0.7)
                                 .foregroundStyle(Tokens.C.ink)
                                 .valueBump(on: model.bump)
                             Text("/ \(units.fmtLNum(model.today?.goal_ml ?? 2500)) \(units.fmtLUnit())")
@@ -180,3 +181,4 @@ struct WaterView: View {
 }
 
 #Preview { WaterView().environmentObject(Units.shared) }
+
