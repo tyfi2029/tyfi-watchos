@@ -96,7 +96,7 @@ struct Zone2View: View {
                 .padding(.bottom, 14)
 
                 VStack(spacing: 14) {
-                    // Big animated heart + bpm
+                    // Big animated heart + bpm — 64pt per spec
                     HStack(alignment: .center, spacing: 14) {
                         Image(systemName: "heart.fill")
                             .font(.system(size: 44))
@@ -110,7 +110,7 @@ struct Zone2View: View {
 
                         VStack(alignment: .leading, spacing: 0) {
                             Text(hk.heartRate.map { "\(Int($0))" } ?? "—")
-                                .font(.system(size: 50, weight: .semibold).monospacedDigit())
+                                .font(.system(size: 64, weight: .bold, design: .rounded).monospacedDigit())
                                 .foregroundStyle(Tokens.C.ink)
                             Text("bpm")
                                 .font(.system(size: 14))
@@ -126,13 +126,13 @@ struct Zone2View: View {
                         .padding(.vertical, 7)
                         .background(zoneColor(zone).opacity(0.16), in: Capsule())
 
-                    // 5-bar Z1–Z5 meter
+                    // 5-bar Z1–Z5 meter — all bars equal height (flat, not staircase)
                     HStack(spacing: 5) {
                         ForEach(1...5, id: \.self) { z in
                             VStack(spacing: 4) {
                                 RoundedRectangle(cornerRadius: 4)
                                     .fill(z == zone ? zoneColor(z) : Tokens.C.card)
-                                    .frame(height: CGFloat(z) * 7 + 18)
+                                    .frame(height: 7)   // all bars same height
                                     .animation(.easeInOut(duration: 0.3), value: zone)
                                 Text("Z\(z)")
                                     .font(.system(size: 9.5, weight: .medium))
