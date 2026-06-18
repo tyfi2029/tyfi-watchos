@@ -1,5 +1,4 @@
 import SwiftUI
-import WatchKit
 
 /// TyFi design tokens — canonical values from the watchOS handoff README.
 /// OLED-first: true-black background on every screen.
@@ -36,6 +35,9 @@ enum Tokens {
 }
 
 // MARK: - Screen-Adaptive Layout
+#if os(watchOS)
+import WatchKit
+
 enum WatchScreen {
     static let width:  CGFloat = WKInterfaceDevice.current().screenBounds.width
     static let height: CGFloat = WKInterfaceDevice.current().screenBounds.height
@@ -65,6 +67,7 @@ enum WatchScreen {
     static let gap:  CGFloat = max( 8, width * 0.028)   // ~10–11pt
     static let tapH: CGFloat = max(48, width * 0.135)   // ~47–55pt
 }
+#endif
 
 // MARK: — Color(hex:) initialiser
 extension Color {
