@@ -82,12 +82,13 @@ struct FastingView: View {
                 VStack(spacing: 14) {
                     // Main ring — 188pt per spec
                     ZStack {
-                        Ring(progress: ringPct, color: ringColor, lineWidth: 11)
-                            .frame(width: 188, height: 188)
+                        Ring(progress: ringPct, color: ringColor, lineWidth: WatchScreen.strokeMd)
+                            .frame(width: WatchScreen.ringMd, height: WatchScreen.ringMd)
                         VStack(spacing: 1) {
                             // Show elapsed time when fasting, "--:--" when not
                             Text(model.state?.active != nil ? displayElapsed : "--:--")
-                                .font(.system(size: 40, weight: .semibold).monospacedDigit())
+                                .font(.system(size: WatchScreen.heroSm, weight: .semibold).monospacedDigit())
+                                .minimumScaleFactor(0.7)
                                 .foregroundStyle(Tokens.C.ink)
                             Text(model.state?.active != nil
                                  ? "/\(Int(model.state!.active!.target_hrs ?? 16)):00"
@@ -243,3 +244,4 @@ struct FastingView: View {
 }
 
 #Preview { FastingView().environmentObject(Units.shared) }
+
