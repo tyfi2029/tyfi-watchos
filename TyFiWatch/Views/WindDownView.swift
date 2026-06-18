@@ -61,6 +61,7 @@ struct WindDownView: View {
                             .foregroundStyle(Tokens.C.sleep)
                         Text("Wind-down")
                             .font(.system(size: 21, weight: .semibold))
+                            .lineLimit(1)
                     }
                     Spacer()
                     Text("21:28")
@@ -172,6 +173,9 @@ struct WindDownView: View {
                     .font(.system(size: 14.5, weight: .medium))
                     .foregroundStyle(done ? Tokens.C.ink3 : Tokens.C.ink)
                     .strikethrough(done, color: Tokens.C.ink3.opacity(0.4))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .truncationMode(.tail)
                 Spacer()
             }
             .padding(.horizontal, 14)
@@ -182,7 +186,7 @@ struct WindDownView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: — Begin button
+    // MARK: — Begin button (solid purple fill from the start; not ghost)
     private var beginButton: some View {
         Button {
             model.beginWindDown()
@@ -191,20 +195,23 @@ struct WindDownView: View {
                 if model.active {
                     Image(systemName: "moon.stars.fill")
                         .font(.system(size: 16))
-                        .foregroundStyle(Color.black)
+                        .foregroundStyle(Color.white)
                     Text("Wind-down active")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Color.black)
+                        .foregroundStyle(Color.white)
+                        .lineLimit(1)
                 } else {
                     Text("Begin wind-down")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(model.active ? Color.black : Tokens.C.sleep)
+                        .foregroundStyle(Color.white)
+                        .lineLimit(1)
                 }
             }
             .frame(maxWidth: .infinity)
             .frame(height: Tokens.S.tapH)
+            // Always solid purple — not ghost — even before active
             .background(
-                model.active ? Tokens.C.sleep : Tokens.C.sleep.opacity(0.20),
+                Tokens.C.sleep,
                 in: RoundedRectangle(cornerRadius: Tokens.S.pillRadius))
         }
         .buttonStyle(.plain)
