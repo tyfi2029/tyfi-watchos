@@ -45,6 +45,7 @@ struct ProtocolView: View {
                 Text("Protocol")
                     .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(Tokens.C.ink)
+                    .lineLimit(1)
                 Spacer()
                 Text("9:41")
                     .font(.system(size: 18, weight: .semibold).monospacedDigit())
@@ -80,6 +81,7 @@ struct ProtocolView: View {
                          (seg?.rangeStart != nil ? " · \(seg!.rangeStart!)" : ""))
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(Tokens.C.ink)
+                        .lineLimit(1)
 
                     HStack(spacing: 6) {
                         ForEach(visibleSegments.indices, id: \.self) { i in
@@ -146,11 +148,11 @@ struct ProtocolView: View {
                         .foregroundStyle(Tokens.C.ink3)
                 }
 
-                // Progress bar
+                // Progress bar — green (Tokens.C.good), not amber
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         Capsule().fill(Color.white.opacity(0.10)).frame(height: 5)
-                        Capsule().fill(Tokens.C.warn)
+                        Capsule().fill(Tokens.C.good)
                             .frame(width: geo.size.width * pct, height: 5)
                             .animation(.easeInOut(duration: 0.4), value: pct)
                     }
