@@ -116,7 +116,7 @@ struct BreathworkView: View {
             ZStack {
                 Circle()
                     .fill(Tokens.C.cool.opacity(0.18))
-                    .frame(width: 140, height: 140)
+                    .frame(width: WatchScreen.ringXs, height: WatchScreen.ringXs)
                     .scaleEffect(model.running ? model.phase.orbScale : 0.66)
                     .animation(
                         model.running
@@ -141,7 +141,8 @@ struct BreathworkView: View {
                             .tracking(1.5)
                             .foregroundStyle(Tokens.C.ink2)
                         Text("\(model.remaining)")
-                            .font(.system(size: 34, weight: .semibold).monospacedDigit())
+                            .font(.system(size: WatchScreen.heroXxs, weight: .semibold).monospacedDigit())
+                            .minimumScaleFactor(0.7)
                             .foregroundStyle(Tokens.C.cool)
                     } else {
                         Text(model.phase.rawValue)
@@ -150,7 +151,7 @@ struct BreathworkView: View {
                     }
                 }
             }
-            .frame(height: 160)
+            .frame(height: WatchScreen.ringXs + 20)
 
             Spacer()
 
@@ -206,3 +207,4 @@ struct BreathworkView: View {
 }
 
 #Preview { BreathworkView().environmentObject(Units.shared) }
+
