@@ -86,6 +86,7 @@ final class BreathModel: ObservableObject {
 /// Screen 22 — Breathwork.
 /// Layout: title → animated breathing orb (scale inhale↔exhale) → phase label →
 ///         live HR readout → cycle counter → pause/resume pill.
+/// Color: cool (#7aa9cf) throughout — this is a downregulation screen.
 struct BreathworkView: View {
     @StateObject private var model = BreathModel()
     @ObservedObject private var hk = HealthKitManager.shared
@@ -111,10 +112,10 @@ struct BreathworkView: View {
 
             Spacer()
 
-            // Breathing orb
+            // Breathing orb — cool blue (downregulation, not accent orange)
             ZStack {
                 Circle()
-                    .fill(Tokens.C.accent.opacity(0.18))
+                    .fill(Tokens.C.cool.opacity(0.18))
                     .frame(width: 140, height: 140)
                     .scaleEffect(model.running ? model.phase.orbScale : 0.66)
                     .animation(
@@ -124,7 +125,7 @@ struct BreathworkView: View {
                         value: model.phase)
                     .overlay(
                         Circle()
-                            .stroke(Tokens.C.accent.opacity(0.35), lineWidth: 1.5)
+                            .stroke(Tokens.C.cool.opacity(0.35), lineWidth: 1.5)
                             .scaleEffect(model.running ? model.phase.orbScale : 0.66)
                             .animation(
                                 model.running
@@ -141,7 +142,7 @@ struct BreathworkView: View {
                             .foregroundStyle(Tokens.C.ink2)
                         Text("\(model.remaining)")
                             .font(.system(size: 34, weight: .semibold).monospacedDigit())
-                            .foregroundStyle(Tokens.C.accent)
+                            .foregroundStyle(Tokens.C.cool)
                     } else {
                         Text(model.phase.rawValue)
                             .font(.system(size: 15))
@@ -175,17 +176,17 @@ struct BreathworkView: View {
                     .background(Tokens.C.card, in: Capsule())
                 }
 
-                // Start / Stop pill
+                // Begin / Pause pill — cool blue (not orange/green)
                 Button {
                     Task { model.running ? await model.stop() : await model.start() }
                 } label: {
                     Text(model.running ? "Pause" : "Begin")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(model.running ? Tokens.C.bad : Tokens.C.good)
+                        .foregroundStyle(model.running ? Tokens.C.bad : Color.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: Tokens.S.tapH)
                         .background(
-                            model.running ? Tokens.C.bad.opacity(0.16) : Tokens.C.good.opacity(0.16),
+                            model.running ? Tokens.C.bad.opacity(0.16) : Tokens.C.cool,
                             in: RoundedRectangle(cornerRadius: Tokens.S.pillRadius))
                 }
                 .buttonStyle(.plain)
