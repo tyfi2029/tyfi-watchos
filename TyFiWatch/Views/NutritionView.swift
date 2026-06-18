@@ -139,8 +139,8 @@ struct NutritionView: View {
         let pct = target > 0 ? min(1.0, Double(value) / Double(target)) : 0
         VStack(spacing: 8) {
             ZStack {
-                Ring(progress: pct, color: color, lineWidth: 7)
-                    .frame(width: 72, height: 72)
+                Ring(progress: pct, color: color, lineWidth: WatchScreen.strokeSm)
+                    .frame(width: WatchScreen.ringMacro, height: WatchScreen.ringMacro)
                 VStack(spacing: 0) {
                     Text("\(value)")
                         .font(.system(size: 20, weight: .semibold).monospacedDigit())
@@ -207,3 +207,4 @@ struct NutritionView: View {
 }
 
 #Preview { NutritionView() }
+
