@@ -168,7 +168,14 @@ struct LiveSensorsView: View {
                              icon: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                KickerLabel(text: kicker)
+                // Kicker label: single line, scales down to 9pt minimum
+                Text(kicker)
+                    .font(.system(size: 9, weight: .semibold))
+                    .tracking(0.8)
+                    .foregroundStyle(Tokens.C.ink3)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .truncationMode(.tail)
                 Spacer()
                 Image(systemName: icon)
                     .font(.system(size: 13))
@@ -176,11 +183,16 @@ struct LiveSensorsView: View {
             }
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text(value)
-                    .font(.system(size: 26, weight: .semibold).monospacedDigit())
+                    .font(.system(size: 28, weight: .bold).monospacedDigit())
                     .foregroundStyle(Tokens.C.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .truncationMode(.tail)
                 Text(unit)
                     .font(.system(size: 10.5))
                     .foregroundStyle(Tokens.C.ink3)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
         }
         .padding(12)
