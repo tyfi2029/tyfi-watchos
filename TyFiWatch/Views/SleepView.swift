@@ -26,7 +26,8 @@ struct SleepView: View {
                 // Status bar
                 HStack(alignment: .lastTextBaseline) {
                     Text(hm(model.report?.duration?.total_min))
-                        .font(.system(size: 50, weight: .semibold).monospacedDigit())
+                        .font(.system(size: WatchScreen.heroMd, weight: .semibold).monospacedDigit())
+                        .minimumScaleFactor(0.7)
                         .foregroundStyle(Tokens.C.ink)
                     Spacer()
                     if let score = model.report?.duration?.score {
@@ -185,3 +186,4 @@ struct SleepView: View {
 }
 
 #Preview { SleepView().environmentObject(Units.shared) }
+
