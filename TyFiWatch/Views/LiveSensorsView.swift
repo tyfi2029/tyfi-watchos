@@ -183,7 +183,8 @@ struct LiveSensorsView: View {
             }
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text(value)
-                    .font(.system(size: 28, weight: .bold).monospacedDigit())
+                    .font(.system(size: max(22, WatchScreen.width * 0.068), weight: .bold).monospacedDigit())
+                    .minimumScaleFactor(0.6)
                     .foregroundStyle(Tokens.C.ink)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -205,3 +206,4 @@ struct LiveSensorsView: View {
 }
 
 #Preview { LiveSensorsView().environmentObject(Units.shared) }
+
