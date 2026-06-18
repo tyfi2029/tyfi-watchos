@@ -246,7 +246,7 @@ struct NowView: View {
                                 .foregroundStyle(Tokens.C.ink3)
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(height: 58)
+                        .frame(height: WatchScreen.tapH)
                         .background(Tokens.C.cool.opacity(0.16),
                                     in: RoundedRectangle(cornerRadius: 18))
                     }
@@ -324,3 +324,4 @@ extension Units {
 }
 
 #Preview { NowView().environmentObject(Units.shared) }
+
