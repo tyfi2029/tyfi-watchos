@@ -50,6 +50,7 @@ struct NutritionView: View {
                             .foregroundStyle(Tokens.C.accent)
                         Text("Nutrition")
                             .font(.system(size: 19, weight: .semibold))
+                            .lineLimit(1)
                     }
                     Spacer()
                     if let g = model.data?.glucose?.glucose {
@@ -150,10 +151,18 @@ struct NutritionView: View {
                 }
             }
             VStack(spacing: 1) {
-                KickerLabel(text: label)
+                // caption2 with lineLimit(1) so "Protein" / "Carbs" / "Fat" never clips
+                Text(label.uppercased())
+                    .font(.system(size: 9, weight: .semibold))
+                    .tracking(0.5)
+                    .foregroundStyle(Tokens.C.ink3)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .truncationMode(.tail)
                 Text("/\(target)g")
                     .font(.system(size: 10).monospacedDigit())
                     .foregroundStyle(Tokens.C.ink3)
+                    .lineLimit(1)
             }
         }
         .frame(maxWidth: .infinity)
@@ -173,8 +182,9 @@ struct NutritionView: View {
                 Text(label)
                     .font(.system(size: 13))
                     .foregroundStyle(Tokens.C.ink2)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .truncationMode(.tail)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: 64)
