@@ -137,11 +137,12 @@ struct SessionTimerView: View {
 
                     // Ring timer
                     ZStack {
-                        Ring(progress: ringPct, color: model.mode.color, lineWidth: 12)
-                            .frame(width: 162, height: 162)
+                        Ring(progress: ringPct, color: model.mode.color, lineWidth: WatchScreen.strokeMd)
+                            .frame(width: WatchScreen.ringSm, height: WatchScreen.ringSm)
                         VStack(spacing: 2) {
                             Text(displayTime)
-                                .font(.system(size: 46, weight: .semibold).monospacedDigit())
+                                .font(.system(size: WatchScreen.heroXs, weight: .semibold).monospacedDigit())
+                                .minimumScaleFactor(0.7)
                                 .foregroundStyle(Tokens.C.ink)
                             Text(model.running
                                  ? "\(units.temp(model.tempF))"
@@ -300,11 +301,13 @@ struct SessionTimerView: View {
                 .onDisappear { heartPulse = false }
             if let hr = hk.heartRate {
                 Text("\(Int(hr))")
-                    .font(.system(size: 34, weight: .semibold).monospacedDigit())
+                    .font(.system(size: WatchScreen.heroXxs, weight: .semibold).monospacedDigit())
+                    .minimumScaleFactor(0.7)
                     .foregroundStyle(Tokens.C.ink)
             } else {
                 Text("—")
-                    .font(.system(size: 34, weight: .semibold).monospacedDigit())
+                    .font(.system(size: WatchScreen.heroXxs, weight: .semibold).monospacedDigit())
+                    .minimumScaleFactor(0.7)
                     .foregroundStyle(Tokens.C.ink3)
             }
             Text("bpm")
@@ -347,3 +350,4 @@ struct SessionTimerView: View {
 }
 
 #Preview { SessionTimerView().environmentObject(Units.shared) }
+
